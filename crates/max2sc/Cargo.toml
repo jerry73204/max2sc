@@ -1,0 +1,26 @@
+[package]
+name = "max2sc"
+version = "0.1.0"
+edition = "2021"
+description = "Convert Max MSP 8 projects to SuperCollider"
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/your-org/max2sc"
+
+[dependencies]
+eyre = { workspace = true }
+color-eyre = { workspace = true }
+clap = { workspace = true }
+tracing = { workspace = true }
+tracing-subscriber = { workspace = true }
+
+max2sc-core = { path = "../max2sc-core" }
+max2sc-max-types = { path = "../max2sc-max-types" }
+max2sc-sc-types = { path = "../max2sc-sc-types" }
+max2sc-parser = { path = "../max2sc-parser" }
+max2sc-analyzer = { path = "../max2sc-analyzer" }
+max2sc-codegen = { path = "../max2sc-codegen" }
+max2sc-spatial = { path = "../max2sc-spatial" }
+
+[dev-dependencies]
+pretty_assertions = { workspace = true }
+tempfile = { workspace = true }

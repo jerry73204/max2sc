@@ -1,0 +1,15 @@
+[package]
+name = "max2sc-spatial"
+version = "0.1.0"
+edition = "2021"
+description = "Spatial audio utilities for max2sc converter"
+license = "MIT OR Apache-2.0"
+
+[dependencies]
+thiserror = { workspace = true }
+max2sc-core = { path = "../max2sc-core" }
+max2sc-max-types = { path = "../max2sc-max-types" }
+max2sc-sc-types = { path = "../max2sc-sc-types" }
+
+[dev-dependencies]
+pretty_assertions = { workspace = true }

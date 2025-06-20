@@ -1,0 +1,14 @@
+[package]
+name = "max2sc-sc-types"
+version = "0.1.0"
+edition = "2021"
+description = "SuperCollider data structures for max2sc converter"
+license = "MIT OR Apache-2.0"
+
+[dependencies]
+serde = { workspace = true }
+serde_yaml = { workspace = true }
+max2sc-core = { path = "../max2sc-core" }
+
+[dev-dependencies]
+pretty_assertions = { workspace = true }

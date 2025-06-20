@@ -1,0 +1,14 @@
+[package]
+name = "max2sc-max-types"
+version = "0.1.0"
+edition = "2021"
+description = "Max MSP data structures for max2sc converter"
+license = "MIT OR Apache-2.0"
+
+[dependencies]
+serde = { workspace = true }
+serde_json = { workspace = true }
+max2sc-core = { path = "../max2sc-core" }
+
+[dev-dependencies]
+pretty_assertions = { workspace = true }

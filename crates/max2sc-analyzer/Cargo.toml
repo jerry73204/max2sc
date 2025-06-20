@@ -1,0 +1,15 @@
+[package]
+name = "max2sc-analyzer"
+version = "0.1.0"
+edition = "2021"
+description = "Signal flow analysis for max2sc converter"
+license = "MIT OR Apache-2.0"
+
+[dependencies]
+petgraph = { workspace = true }
+thiserror = { workspace = true }
+max2sc-core = { path = "../max2sc-core" }
+max2sc-max-types = { path = "../max2sc-max-types" }
+
+[dev-dependencies]
+pretty_assertions = { workspace = true }
