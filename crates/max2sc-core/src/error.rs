@@ -13,3 +13,6 @@ pub enum ConversionError {
     #[error("Missing required attribute: {0}")]
     MissingAttribute(String),
 }
+
+/// Result type alias for max2sc-core
+pub type Result<T> = std::result::Result<T, ConversionError>;
