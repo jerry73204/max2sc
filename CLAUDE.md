@@ -60,7 +60,7 @@ This is a **Rust workspace** that converts Max MSP 8 projects to SuperCollider c
 The codebase uses a **conversion pipeline** with distinct phases:
 
 1. **Parsing** (`max2sc-parser`): Reads `.maxpat` JSON files into structured data
-2. **Analysis** (`max2sc-analyzer`): Builds signal flow graphs using `petgraph` and extracts spatial configurations  
+2. **Analysis** (`max2sc-analyzer`): Builds signal flow graphs using `petgraph` and extracts spatial configurations
 3. **Code Generation** (`max2sc-codegen`): Produces SuperCollider SynthDefs, patterns, and project structure
 4. **Output**: Complete SC project with preserved OSC namespace
 
@@ -68,7 +68,7 @@ The codebase uses a **conversion pipeline** with distinct phases:
 
 **Three-tier type system** for clean separation:
 - `max2sc-max-types`: Max MSP patch format structures (`MaxPatch`, `BoxContent`, `PatchLine`)
-- `max2sc-sc-types`: SuperCollider output structures (`SynthDef`, `UGen`, `Pattern`, `SCProject`)  
+- `max2sc-sc-types`: SuperCollider output structures (`SynthDef`, `UGen`, `Pattern`, `SCProject`)
 - `max2sc-core`: Shared types and conversion traits (`Position3D`, `AudioFormat`, `ToSuperCollider`)
 
 ### Conversion Traits
@@ -93,7 +93,7 @@ trait FromMax<T> {
 
 The converter specializes in **spatial audio objects**:
 - **SPAT5** objects (spat5.panoramix~, spat5.hoa.*) → Custom SC classes + ATK integration
-- **Multichannel** (mc.*) → SC Array operations  
+- **Multichannel** (mc.*) → SC Array operations
 - **WFS/VBAP** → Speaker array configurations
 - **OSC namespace preservation** for compatibility with existing workflows
 
@@ -112,7 +112,7 @@ pub enum ParseError {
     // ...
 }
 
-// Binary pattern  
+// Binary pattern
 fn main() -> eyre::Result<()> {
     let patch = load_patch(&args.input)
         .wrap_err("Failed to load Max patch")?;
@@ -126,7 +126,7 @@ fn main() -> eyre::Result<()> {
 
 Functions use `todo!()` for unimplemented features to fail explicitly rather than return dummy values. When implementing:
 
-1. Remove the `todo!()` 
+1. Remove the `todo!()`
 2. Implement the actual logic
 3. Add comprehensive error handling
 4. Write tests for the implementation
@@ -135,13 +135,13 @@ Functions use `todo!()` for unimplemented features to fail explicitly rather tha
 
 Reference `MAPPING.md` for object conversion strategies. Key mappings:
 - `spat5.panoramix~` → Modular encoder/processor/decoder architecture
-- `spat5.hoa.*` → ATK (Ambisonic Toolkit) integration  
+- `spat5.hoa.*` → ATK (Ambisonic Toolkit) integration
 - `mc.*` → Array expansion with wrapper classes
 
 ### Testing Strategy
 
 - **Unit tests**: Per-crate in `src/` modules
-- **Integration tests**: In `crates/max2sc/tests/` 
+- **Integration tests**: In `crates/max2sc/tests/`
 - **Fixtures**: Test Max projects in `tests/fixtures/`
 - **Snapshot testing**: Use `insta` for SC code generation validation
 
@@ -153,7 +153,7 @@ The `max8_source/` directory contains the reference Max8 project being converted
 # Analyze patch objects and generate mappings
 python scripts/analyze_max_patches.py
 
-# Extract OSC namespace  
+# Extract OSC namespace
 python scripts/extract_osc_commands.py
 ```
 
@@ -161,10 +161,12 @@ Key findings: 419 unique objects, 140+ SPAT5 types, 82-channel processing, exten
 
 ## Documentation Structure
 
-- `PLAN.md`: Project overview and objectives
-- `ARCH.md`: Detailed workspace structure and component architecture  
-- `MAPPING.md`: Max↔SC object conversion strategies
-- `DATA_TYPES.md`: Serialization format specifications
-- `PROGRESS.md`: Task tracking and implementation status
-- `CONVERSION_STRATEGIES.md`: Implementation approaches
-- `NOTES_Max8_Project_Analysis.md`: Analysis of the source Max8 project
+Documentation is located in the `doc/` directory:
+
+- `doc/PLAN.md`: Project overview and objectives
+- `doc/ARCH.md`: Detailed workspace structure and component architecture
+- `doc/MAPPING.md`: Max↔SC object conversion strategies
+- `doc/DATA_TYPES.md`: Serialization format specifications
+- `doc/PROGRESS.md`: Task tracking and implementation status
+- `doc/CONVERSION_STRATEGIES.md`: Implementation approaches
+- `doc/NOTES_Max8_Project_Analysis.md`: Analysis of the source Max8 project
