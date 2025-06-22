@@ -9,6 +9,7 @@ members = [
     "crates/max2sc-analyzer",
     "crates/max2sc-codegen",
     "crates/max2sc-spatial",
+    "crates/max2sc-test",
 ]
 
 [workspace.dependencies]

@@ -145,3 +145,15 @@ impl From<SCObject> for SCValue {
         SCValue::Object(Box::new(v))
     }
 }
+
+impl From<u32> for SCValue {
+    fn from(v: u32) -> Self {
+        SCValue::Int(v as i32)
+    }
+}
+
+impl From<bool> for SCValue {
+    fn from(v: bool) -> Self {
+        SCValue::Int(if v { 1 } else { 0 })
+    }
+}

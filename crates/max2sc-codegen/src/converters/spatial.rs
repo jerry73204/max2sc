@@ -128,37 +128,206 @@ impl SpatialConverter {
             .prop("comment", format!("matrix~ {}x{}", num_ins, num_outs)))
     }
 
-    /// Basic SPAT5 object conversion (placeholder for now)
-    fn convert_spat5_basic(obj_name: &str, _args: &[&str]) -> Result<SCObject> {
+    /// SPAT5 object conversion with detailed implementations
+    fn convert_spat5_basic(obj_name: &str, args: &[&str]) -> Result<SCObject> {
         match obj_name {
-            "spat5.pan~" => {
-                // SPAT5 panning - use VBAP for now
-                Ok(SCObject::new("VBAP")
-                    .with_method("ar")
-                    .arg(8) // numChans (default)
-                    .arg(SCValue::Symbol("input".to_string()))
-                    .arg(SCValue::Symbol("azimuth".to_string()))
-                    .arg(SCValue::Symbol("elevation".to_string()))
-                    .arg(SCValue::Symbol("spread".to_string()))
-                    .prop("comment", "spat5.pan~"))
-            }
-            "spat5.stereo~" => {
-                // SPAT5 stereo processing
-                Ok(SCObject::new("Splay")
-                    .with_method("ar")
-                    .arg(SCValue::Symbol("input".to_string()))
-                    .arg(1.0) // spread
-                    .arg(1.0) // level
-                    .arg(0.0) // center
-                    .prop("comment", "spat5.stereo~"))
-            }
+            "spat5.panoramix~" => Self::convert_spat5_panoramix(args),
+            "spat5.pan~" => Self::convert_spat5_pan(args),
+            "spat5.stereo~" => Self::convert_spat5_stereo(args),
+            "spat5.hoa.encoder~" => Self::convert_spat5_hoa_encoder(args),
+            "spat5.hoa.decoder~" => Self::convert_spat5_hoa_decoder(args),
+            "spat5.hoa.rotate~" => Self::convert_spat5_hoa_rotate(args),
+            "spat5.vbap~" => Self::convert_spat5_vbap(args),
+            "spat5.reverb~" => Self::convert_spat5_reverb(args),
+            "spat5.early~" => Self::convert_spat5_early_reflections(args),
             _ => {
-                // Generic SPAT5 placeholder
+                // Generic SPAT5 placeholder for unimplemented objects
                 Ok(SCObject::new("SPAT5_Placeholder")
                     .arg(obj_name)
                     .prop("comment", format!("{} - needs implementation", obj_name)))
             }
         }
+    }
+
+    /// Convert spat5.panoramix~ - the main SPAT5 spatialization engine
+    fn convert_spat5_panoramix(args: &[&str]) -> Result<SCObject> {
+        // Parse arguments: numInputs, numOutputs, room model, etc.
+        let num_inputs = args.get(0).and_then(|s| s.parse::<i32>().ok()).unwrap_or(1);
+        let num_outputs = args.get(1).and_then(|s| s.parse::<i32>().ok()).unwrap_or(8);
+
+        // spat5.panoramix~ is a complex multichannel spatializer
+        // We'll implement it as a modular system with multiple components
+        Ok(SCObject::new("SpatPanoramix")
+            .with_method("ar")
+            .arg(SCValue::Symbol("input".to_string()))
+            .arg(num_inputs)
+            .arg(num_outputs)
+            .arg(SCValue::Array(vec![
+                SCValue::Symbol("azimuth".to_string()),
+                SCValue::Symbol("elevation".to_string()),
+                SCValue::Symbol("distance".to_string()),
+            ]))
+            .prop("format", "VBAP") // Default format, can be changed via OSC
+            .prop("room_model", "basic")
+            .prop("reverb_enable", true)
+            .prop("early_reflections", true)
+            .prop("comment", "spat5.panoramix~ - main spatialization engine"))
+    }
+
+    /// Convert spat5.pan~ - flexible panning object
+    fn convert_spat5_pan(args: &[&str]) -> Result<SCObject> {
+        let num_outputs = args.get(0).and_then(|s| s.parse::<i32>().ok()).unwrap_or(8);
+
+        Ok(SCObject::new("VBAP")
+            .with_method("ar")
+            .arg(num_outputs)
+            .arg(SCValue::Symbol("input".to_string()))
+            .arg(SCValue::Symbol("azimuth".to_string()))
+            .arg(SCValue::Symbol("elevation".to_string()))
+            .arg(SCValue::Symbol("spread".to_string()))
+            .prop("comment", "spat5.pan~"))
+    }
+
+    /// Convert spat5.stereo~ - stereo processing
+    fn convert_spat5_stereo(_args: &[&str]) -> Result<SCObject> {
+        Ok(SCObject::new("Splay")
+            .with_method("ar")
+            .arg(SCValue::Symbol("input".to_string()))
+            .arg(1.0) // spread
+            .arg(1.0) // level
+            .arg(0.0) // center
+            .prop("comment", "spat5.stereo~"))
+    }
+
+    /// Convert spat5.hoa.encoder~ - Higher Order Ambisonics encoder
+    fn convert_spat5_hoa_encoder(args: &[&str]) -> Result<SCObject> {
+        let order = args.get(0).and_then(|s| s.parse::<i32>().ok()).unwrap_or(1); // Default to first order
+
+        match order {
+            1 => {
+                // First Order Ambisonics - use ATK
+                Ok(SCObject::new("FoaEncode")
+                    .with_method("ar")
+                    .arg(SCValue::Symbol("input".to_string()))
+                    .arg(SCValue::Symbol("azimuth".to_string()))
+                    .arg(SCValue::Symbol("elevation".to_string()))
+                    .prop("encoder_type", "omni")
+                    .prop("comment", "spat5.hoa.encoder~ (FOA)"))
+            }
+            _ => {
+                // Higher order - use HoaLib if available
+                Ok(SCObject::new("HoaEncodeMatrix")
+                    .with_method("ar")
+                    .arg(order)
+                    .arg(SCValue::Symbol("input".to_string()))
+                    .arg(SCValue::Symbol("azimuth".to_string()))
+                    .arg(SCValue::Symbol("elevation".to_string()))
+                    .prop("comment", format!("spat5.hoa.encoder~ (order {})", order)))
+            }
+        }
+    }
+
+    /// Convert spat5.hoa.decoder~ - HOA decoder
+    fn convert_spat5_hoa_decoder(args: &[&str]) -> Result<SCObject> {
+        let order = args.get(0).and_then(|s| s.parse::<i32>().ok()).unwrap_or(1);
+        let num_speakers = args.get(1).and_then(|s| s.parse::<i32>().ok()).unwrap_or(8);
+
+        match order {
+            1 => {
+                // First Order Ambisonics
+                Ok(SCObject::new("FoaDecode")
+                    .with_method("ar")
+                    .arg(SCValue::Symbol("encoded_input".to_string()))
+                    .arg(SCValue::Symbol("decoder_matrix".to_string()))
+                    .prop("num_speakers", num_speakers)
+                    .prop("comment", "spat5.hoa.decoder~ (FOA)"))
+            }
+            _ => {
+                // Higher order
+                Ok(SCObject::new("HoaDecodeMatrix")
+                    .with_method("ar")
+                    .arg(order)
+                    .arg(num_speakers)
+                    .arg(SCValue::Symbol("encoded_input".to_string()))
+                    .prop("comment", format!("spat5.hoa.decoder~ (order {})", order)))
+            }
+        }
+    }
+
+    /// Convert spat5.hoa.rotate~ - HOA rotation
+    fn convert_spat5_hoa_rotate(args: &[&str]) -> Result<SCObject> {
+        let order = args.get(0).and_then(|s| s.parse::<i32>().ok()).unwrap_or(1);
+
+        match order {
+            1 => Ok(SCObject::new("FoaRotate")
+                .with_method("ar")
+                .arg(SCValue::Symbol("encoded_input".to_string()))
+                .arg(SCValue::Symbol("azimuth".to_string()))
+                .arg(SCValue::Symbol("elevation".to_string()))
+                .arg(SCValue::Symbol("roll".to_string()))
+                .prop("comment", "spat5.hoa.rotate~ (FOA)")),
+            _ => Ok(SCObject::new("HoaRotate")
+                .with_method("ar")
+                .arg(order)
+                .arg(SCValue::Symbol("encoded_input".to_string()))
+                .arg(SCValue::Symbol("azimuth".to_string()))
+                .arg(SCValue::Symbol("elevation".to_string()))
+                .prop("comment", format!("spat5.hoa.rotate~ (order {})", order))),
+        }
+    }
+
+    /// Convert spat5.vbap~ - Vector Based Amplitude Panning
+    fn convert_spat5_vbap(args: &[&str]) -> Result<SCObject> {
+        let num_speakers = args.get(0).and_then(|s| s.parse::<i32>().ok()).unwrap_or(8);
+
+        Ok(SCObject::new("VBAP")
+            .with_method("ar")
+            .arg(num_speakers)
+            .arg(SCValue::Symbol("input".to_string()))
+            .arg(SCValue::Symbol("azimuth".to_string()))
+            .arg(SCValue::Symbol("elevation".to_string()))
+            .arg(SCValue::Symbol("spread".to_string()))
+            .prop("speaker_setup", "ring")
+            .prop("comment", "spat5.vbap~"))
+    }
+
+    /// Convert spat5.reverb~ - spatial reverb
+    fn convert_spat5_reverb(args: &[&str]) -> Result<SCObject> {
+        let num_outputs = args.get(0).and_then(|s| s.parse::<i32>().ok()).unwrap_or(2);
+
+        Ok(SCObject::new("JPverb")
+            .with_method("ar")
+            .arg(SCValue::Symbol("input".to_string()))
+            .arg(SCValue::Symbol("rt60".to_string()))
+            .arg(SCValue::Symbol("damping".to_string()))
+            .arg(SCValue::Symbol("size".to_string()))
+            .arg(SCValue::Symbol("early_diff".to_string()))
+            .arg(SCValue::Symbol("mod_depth".to_string()))
+            .arg(SCValue::Symbol("mod_freq".to_string()))
+            .arg(SCValue::Symbol("low".to_string()))
+            .arg(SCValue::Symbol("mid".to_string()))
+            .arg(SCValue::Symbol("high".to_string()))
+            .arg(SCValue::Symbol("hf_damping".to_string()))
+            .prop("num_outputs", num_outputs)
+            .prop("comment", "spat5.reverb~"))
+    }
+
+    /// Convert spat5.early~ - early reflections
+    fn convert_spat5_early_reflections(args: &[&str]) -> Result<SCObject> {
+        let num_taps = args.get(0).and_then(|s| s.parse::<i32>().ok()).unwrap_or(8);
+
+        Ok(SCObject::new("EarlyReflections")
+            .with_method("ar")
+            .arg(SCValue::Symbol("input".to_string()))
+            .arg(num_taps)
+            .arg(SCValue::Symbol("room_size".to_string()))
+            .arg(SCValue::Symbol("damping".to_string()))
+            .arg(SCValue::Array(vec![
+                SCValue::Symbol("delay_times".to_string()),
+                SCValue::Symbol("gains".to_string()),
+                SCValue::Symbol("pan_positions".to_string()),
+            ]))
+            .prop("comment", "spat5.early~ - early reflections"))
     }
 }
 
@@ -237,5 +406,88 @@ mod tests {
         assert!(result.is_ok());
         let obj = result.unwrap();
         assert_eq!(obj.class_name, "VBAP");
+    }
+
+    #[test]
+    fn test_spat5_panoramix_conversion() {
+        let content = BoxContent {
+            id: "obj-1".to_string(),
+            maxclass: "newobj".to_string(),
+            text: Some("spat5.panoramix~ 4 16".to_string()),
+            numinlets: 4,
+            numoutlets: 16,
+            patching_rect: None,
+            outlettype: None,
+            parameter_enable: None,
+            attributes: Default::default(),
+        };
+
+        let result = SpatialConverter::convert(&content);
+        assert!(result.is_ok());
+        let obj = result.unwrap();
+        assert_eq!(obj.class_name, "SpatPanoramix");
+        assert_eq!(obj.method, Some("ar".to_string()));
+        assert!(obj.args.len() >= 4); // input, num_inputs, num_outputs, positions
+    }
+
+    #[test]
+    fn test_spat5_hoa_encoder_conversion() {
+        let content = BoxContent {
+            id: "obj-1".to_string(),
+            maxclass: "newobj".to_string(),
+            text: Some("spat5.hoa.encoder~ 1".to_string()),
+            numinlets: 1,
+            numoutlets: 4,
+            patching_rect: None,
+            outlettype: None,
+            parameter_enable: None,
+            attributes: Default::default(),
+        };
+
+        let result = SpatialConverter::convert(&content);
+        assert!(result.is_ok());
+        let obj = result.unwrap();
+        assert_eq!(obj.class_name, "FoaEncode"); // First order uses FOA
+    }
+
+    #[test]
+    fn test_spat5_hoa_decoder_conversion() {
+        let content = BoxContent {
+            id: "obj-1".to_string(),
+            maxclass: "newobj".to_string(),
+            text: Some("spat5.hoa.decoder~ 1 8".to_string()),
+            numinlets: 4,
+            numoutlets: 8,
+            patching_rect: None,
+            outlettype: None,
+            parameter_enable: None,
+            attributes: Default::default(),
+        };
+
+        let result = SpatialConverter::convert(&content);
+        assert!(result.is_ok());
+        let obj = result.unwrap();
+        assert_eq!(obj.class_name, "FoaDecode"); // First order uses FOA
+    }
+
+    #[test]
+    fn test_spat5_vbap_conversion() {
+        let content = BoxContent {
+            id: "obj-1".to_string(),
+            maxclass: "newobj".to_string(),
+            text: Some("spat5.vbap~ 8".to_string()),
+            numinlets: 1,
+            numoutlets: 8,
+            patching_rect: None,
+            outlettype: None,
+            parameter_enable: None,
+            attributes: Default::default(),
+        };
+
+        let result = SpatialConverter::convert(&content);
+        assert!(result.is_ok());
+        let obj = result.unwrap();
+        assert_eq!(obj.class_name, "VBAP");
+        assert_eq!(obj.method, Some("ar".to_string()));
     }
 }

@@ -1,0 +1,44 @@
+[package]
+name = "max2sc-test"
+version = "0.1.0"
+edition = "2021"
+description = "SuperCollider integration testing framework for max2sc"
+license = "MIT OR Apache-2.0"
+
+[dependencies]
+max2sc-core = { path = "../max2sc-core" }
+max2sc-max-types = { path = "../max2sc-max-types" }
+max2sc-sc-types = { path = "../max2sc-sc-types" }
+max2sc-parser = { path = "../max2sc-parser" }
+max2sc-analyzer = { path = "../max2sc-analyzer" }
+max2sc-codegen = { path = "../max2sc-codegen" }
+
+# Process management
+tokio = { version = "1.40", features = ["full"] }
+async-trait = "0.1"
+
+# Error handling
+thiserror = { workspace = true }
+eyre = { workspace = true }
+
+# Utilities
+tempfile = { workspace = true }
+regex = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+tracing = { workspace = true }
+
+# Audio analysis
+hound = "3.5"  # WAV file reading/writing
+rustfft = "6.2"  # FFT for spectral analysis
+
+# Testing utilities
+pretty_assertions = { workspace = true }
+
+[dev-dependencies]
+tokio-test = "0.4"
+tracing-subscriber = "0.3"
+
+[[example]]
+name = "phase4_demo"
+path = "examples/phase4_demo.rs"
