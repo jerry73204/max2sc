@@ -138,46 +138,75 @@ echo 'Server.default.options.device = "hw:Dummy,0";' >> ~/.config/SuperCollider/
 # Note: This will NOT provide true 64-channel capability
 ```
 
-### Option 3: PipeWire (Modern Alternative)
+### Option 3: PipeWire AES67 (Your Current Setup)
 
-**64-Channel Capabilities:**
-- ✅ **JACK compatibility**: Drop-in replacement with JACK client support
-- ✅ **Unified audio**: Replaces both PulseAudio and JACK
-- ✅ **Multichannel support**: Native support for high channel counts
-- ⚠️ **Maturity**: Newer system, less field-tested than JACK
+**82-Channel Capabilities:**
+- ❌ **Channel Limitation**: 64 channels maximum (18 short of your requirement)
+- ✅ **AES67 Network Audio**: Module exists but incomplete implementation
+- ⚠️ **WINE Integration**: Direct support under development
+- ❌ **Production Readiness**: Not suitable for professional 82-channel spatial audio
 
 ```bash
-# Install PipeWire
-sudo apt install pipewire pipewire-jack pipewire-alsa
+# Your existing PipeWire AES67 setup
+systemctl --user status pipewire pipewire-pulse
+pw-cli list-objects | grep aes67
 
-# Enable PipeWire services
-systemctl --user enable pipewire pipewire-pulse
+# Check current channel limits
+pw-cli info $(pw-cli list-objects | grep "Audio/Source" | head -1 | cut -d' ' -f2)
 
-# Configure for 64-channel operation
-# Edit /etc/pipewire/pipewire.conf for multichannel setup
+# For Max MSP integration (limited to 64 channels)
+pw-jack jackd -d alsa -r 48000 -p 512 -i 64 -o 64  # Cannot reach 82 channels
+
+# WINE configuration for PipeWire
+export WINEPREFIX=$HOME/.wine_max
+wine regsvr32 wineasio.dll  # Still needs JACK bridge
 ```
+
+**Current Status for max2sc Project:**
+- **Not Recommended**: 64-channel limit blocks 82-channel spatial audio
+- **Future Potential**: Monitor development for channel count increases
+- **Workaround Required**: Must use JACK bridge with reduced channel count
 
 ### Recommended Setup for max2sc 82-Channel Testing
 
-**Production Setup (Hardware Available):**
+**With Your Current PipeWire AES67 Setup (Limited):**
 ```bash
+# Check your current PipeWire configuration
+systemctl --user status pipewire
+pw-cli list-objects
+
+# Use PipeWire-JACK bridge for Max MSP (64-channel limit)
+pw-jack jackd -d alsa -r 48000 -p 512 -i 64 -o 64
+
+# SuperCollider configuration (reduced channel count)
+s.options.numOutputBusChannels = 64;  // Limited by PipeWire
+s.options.numInputBusChannels = 64;
+s.options.blockSize = 512;
+
+# Note: This setup cannot test full 82-channel spatial audio
+```
+
+**Production Setup (Upgrade to JACK for Full 82-Channel):**
+```bash
+# Stop PipeWire temporarily for JACK
+systemctl --user stop pipewire pipewire-pulse
+
 # JACK with professional interface
 jackd -R -P70 --port-max 1024 -d alsa -d hw:RME -r 48000 -p 512 -n 2 -i 82 -o 82
 
-# SuperCollider configuration
+# SuperCollider configuration (full channel count)
 s.options.numOutputBusChannels = 82;
 s.options.numInputBusChannels = 82;
 s.options.blockSize = 512;
 ```
 
-**Development/CI Setup (No Hardware):**
+**Development/CI Setup (Virtual 82-Channel):**
 ```bash
-# Use snd-aloop for loopback testing (better than snd-dummy)
-sudo modprobe snd-aloop pcm_substreams=8 index=1
+# Use JACK dummy driver for headless 82-channel testing
+jackd -d dummy -r 48000 -p 1024 -i 82 -o 82
 
-# Create virtual 82-channel interface using multiple loops
-# Configure JACK to use loopback interfaces
-jackd -d alsa -d hw:Loopback,0,0 -r 48000 -p 1024 -n 2 -i 82 -o 82
+# Or with PipeWire (limited to 64 channels for partial testing)
+pw-jack jackd -d dummy -r 48000 -p 1024 -i 64 -o 64
 ```
 
 **Testing and Validation:**
