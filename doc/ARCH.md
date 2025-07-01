@@ -1,8 +1,6 @@
 # max2sc Architecture
 
-## Overview
-
-The max2sc converter is designed as a modular Rust application that transforms Max MSP 8 projects into equivalent SuperCollider projects. The architecture emphasizes separation of concerns, extensibility, and maintainable code generation.
+This document describes the project structure and component organization of the max2sc converter.
 
 ## Cargo Workspace Structure
 
@@ -247,98 +245,24 @@ Shared spatial audio functionality:
 - **Common Algorithms**: Shared spatial processing logic
 - **Dependencies**: Uses both `max2sc-max-types` and `max2sc-sc-types`
 
-## Key Design Patterns
 
-### 1. Visitor Pattern
-Used for traversing the Max patch structure and generating appropriate SC code.
+## Dependencies
 
-### 2. Builder Pattern
-Used for constructing complex SC objects like SynthDefs and spatial processors.
+Each crate has specific dependencies based on its role:
 
-### 3. Strategy Pattern
-Different code generation strategies for different Max object types.
+- **max2sc** (binary): `clap`, `eyre`, `color-eyre`, `tracing`
+- **max2sc-core**: `thiserror`, `serde`
+- **max2sc-max-types**: `serde`, `serde_json`
+- **max2sc-sc-types**: `serde`, `serde_yaml`
+- **max2sc-parser**: `serde_json`, `regex`
+- **max2sc-analyzer**: `petgraph`, `indexmap`
+- **max2sc-codegen**: `tera` (templating), `prettytable-rs`
+- **max2sc-spatial**: Mathematical libraries as needed
 
-### 4. Factory Pattern
-Creating appropriate SC representations based on Max object types.
+## Build System
 
-## Error Handling Strategy
-
-### Library Crates (thiserror)
-All library crates use `thiserror` for structured error types:
-
-```rust
-#[derive(thiserror::Error, Debug)]
-pub enum ParseError {
-    #[error("Invalid Max patch format: {0}")]
-    InvalidFormat(String),
-    
-    #[error("Unsupported Max version: {version}")]
-    UnsupportedVersion { version: String },
-    
-    #[error("Object not found: {name}")]
-    ObjectNotFound { name: String },
-    
-    #[error(transparent)]
-    Json(#[from] serde_json::Error),
-}
-```
-
-### Binary Crate (eyre)
-The main binary uses `eyre` for application-level error handling with rich context:
-
-```rust
-use eyre::{Result, WrapErr};
-
-fn main() -> Result<()> {
-    color_eyre::install()?;
-    
-    let patch = load_patch(&args.input)
-        .wrap_err("Failed to load Max patch")?;
-        
-    let sc_code = convert_patch(patch)
-        .wrap_err_with(|| format!("Failed to convert patch: {}", args.input))?;
-    
-    Ok(())
-}
-```
-
-## Extension Points
-
-### Adding New Object Mappings
-
-1. Add mapping to `max2sc-spatial/src/mapping.rs`
-2. Implement parser support in `max2sc-parser`
-3. Add code generation in `max2sc-codegen`
-4. Write tests for the new mapping
-
-### Supporting New Spatial Algorithms
-
-1. Define algorithm in `max2sc-spatial`
-2. Create analyzer rules in `max2sc-analyzer`
-3. Implement SC code generation
-4. Add integration tests
-
-### Custom Output Formats
-
-The architecture allows for different output strategies:
-- Single-file SC scripts
-- Modular SC class libraries
-- Quark packages
-- Live coding setups
-
-## Performance Considerations
-
-### Parallel Processing
-- Parse multiple patches concurrently
-- Generate code for independent objects in parallel
-- Use `rayon` for data parallelism where appropriate
-
-### Memory Efficiency
-- Stream large patch files
-- Generate code incrementally
-- Reuse common patterns and templates
-
-### Optimization Opportunities
-- Cache parsed objects
-- Precompute spatial calculations
-- Optimize generated SC code for performance
+The project uses Cargo workspace features:
+- Shared dependencies via `[workspace.dependencies]`
+- Unified versioning
+- Parallel compilation of crates
+- Feature flags for optional functionality
