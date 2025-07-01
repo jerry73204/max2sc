@@ -3,7 +3,7 @@
 use crate::AnalysisError;
 use max2sc_max_types::MaxPatch;
 
-pub fn analyze_routing(patch: &MaxPatch) -> Result<RoutingInfo, AnalysisError> {
+pub fn analyze_routing(_patch: &MaxPatch) -> Result<RoutingInfo, AnalysisError> {
     todo!("Implement routing analysis")
 }
 

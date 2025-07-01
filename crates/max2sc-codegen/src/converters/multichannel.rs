@@ -42,7 +42,7 @@ impl MultichannelConverter {
             .and_then(|s| s.parse::<i32>().ok())
             .unwrap_or(2);
 
-        Ok(SCObject::new("Array").prop("comment", format!("mc.pack~ {} channels", num_channels)))
+        Ok(SCObject::new("Array").prop("comment", format!("mc.pack~ {num_channels} channels")))
     }
 
     /// Convert mc.unpack~ to SC array indexing
@@ -55,7 +55,7 @@ impl MultichannelConverter {
             .unwrap_or(2);
 
         Ok(SCObject::new("ArrayIndex")
-            .prop("comment", format!("mc.unpack~ {} channels", num_channels)))
+            .prop("comment", format!("mc.unpack~ {num_channels} channels")))
     }
 
     /// Convert mc.dac~ to multichannel output

@@ -1,10 +1,8 @@
 //! Functional tests for SuperCollider object instantiation and behavior
 
 use crate::assertions::{Assertion, AssertionResult};
-use crate::error::{Result, TestError};
+use crate::error::Result;
 use crate::runner::SCTestRunner;
-use serde_json::Value;
-use std::collections::HashMap;
 use std::time::Duration;
 use tokio::time::timeout;
 use tracing::{debug, info};
@@ -22,6 +20,8 @@ pub struct FunctionalTest {
     pub assertions: Vec<Assertion>,
     /// Test timeout
     pub timeout: Duration,
+    /// Whether to boot the server (false for simple variable tests)
+    pub requires_server: bool,
 }
 
 /// Functional test output
@@ -48,6 +48,7 @@ impl FunctionalTest {
             cleanup: String::new(),
             assertions: Vec::new(),
             timeout: Duration::from_secs(10),
+            requires_server: true, // Default to server boot for compatibility
         }
     }
 
@@ -78,6 +79,12 @@ impl FunctionalTest {
     /// Set test timeout
     pub fn with_timeout(mut self, timeout: Duration) -> Self {
         self.timeout = timeout;
+        self
+    }
+
+    /// Set whether the test requires server boot
+    pub fn with_server(mut self, requires_server: bool) -> Self {
+        self.requires_server = requires_server;
         self
     }
 
@@ -135,9 +142,10 @@ impl FunctionalTest {
     fn generate_test_script(&self) -> String {
         let mut script = String::new();
 
-        // Add server boot and wait
-        script.push_str(&format!(
-            r#"
+        if self.requires_server {
+            // Add server boot and wait
+            script.push_str(&format!(
+                r#"
 // Boot server and wait
 Server.default.waitForBoot {{
     var testResults = ();
@@ -162,8 +170,38 @@ Server.default.waitForBoot {{
 
     // Assertion phase
 "#,
-            self.setup, self.test_code
-        ));
+                self.setup, self.test_code
+            ));
+        } else {
+            // No server boot required - execute directly
+            script.push_str(&format!(
+                r#"
+// Test without server boot
+var testResults = ();
+
+// Setup phase
+try {{
+    {}
+    "Setup completed".postln;
+}} {{ |error|
+    ("Setup failed: " ++ error.errorString).postln;
+    0.exit;
+}};
+
+// Test execution phase
+try {{
+    {}
+    "Test execution completed".postln;
+}} {{ |error|
+    ("Test execution failed: " ++ error.errorString).postln;
+    0.exit;
+}};
+
+// Assertion phase
+"#,
+                self.setup, self.test_code
+            ));
+        }
 
         // Add assertion checks
         for (i, assertion) in self.assertions.iter().enumerate() {
@@ -203,8 +241,9 @@ Server.default.waitForBoot {{
         }
 
         // Add cleanup and exit
-        script.push_str(&format!(
-            r#"
+        if self.requires_server {
+            script.push_str(&format!(
+                r#"
     // Cleanup phase
     try {{
         {}
@@ -222,8 +261,30 @@ Server.default.waitForBoot {{
     0.exit;
 }};
 "#,
-            self.cleanup
-        ));
+                self.cleanup
+            ));
+        } else {
+            script.push_str(&format!(
+                r#"
+// Cleanup phase
+try {{
+    {}
+    "Cleanup completed".postln;
+}} {{ |error|
+    ("Cleanup failed: " ++ error.errorString).postln;
+}};
+
+// Print summary
+testResults.keysValuesDo {{ |key, value|
+    ("RESULT: " ++ key ++ " = " ++ value.asCompileString).postln;
+}};
+
+"All tests completed".postln;
+0.exit;
+"#,
+                self.cleanup
+            ));
+        }
 
         script
     }
@@ -233,7 +294,7 @@ Server.default.waitForBoot {{
         let mut results = Vec::new();
 
         for (i, assertion) in self.assertions.iter().enumerate() {
-            let assertion_marker = format!("ASSERTION_{}:", i);
+            let assertion_marker = format!("ASSERTION_{i}:");
 
             if let Some(line) = output.lines().find(|line| line.contains(&assertion_marker)) {
                 let passed = line.contains("true");
@@ -317,19 +378,18 @@ impl FunctionalOutput {
     }
 }
 
-/// Helper functions for common functional tests
+// Helper functions for common functional tests
 
 /// Test that an object can be instantiated
 pub fn test_object_instantiation(class_name: &str) -> FunctionalTest {
-    FunctionalTest::new(format!("~testObj = {}.ar;", class_name))
+    FunctionalTest::new(format!("~testObj = {class_name}.ar;"))
         .assert(Assertion::not_nil("~testObj"))
 }
 
 /// Test that an object responds to a method
 pub fn test_method_response(object_code: &str, method: &str) -> FunctionalTest {
     FunctionalTest::new(format!(
-        "~testObj = {}; ~result = ~testObj.{};",
-        object_code, method
+        "~testObj = {object_code}; ~result = ~testObj.{method};"
     ))
     .assert(Assertion::not_nil("~result"))
 }
@@ -341,13 +401,12 @@ pub fn test_osc_responder(osc_path: &str, test_value: f32) -> FunctionalTest {
 ~responder = OSCdef(\testResponder, {{|msg|
     ~receivedValue = msg[1];
     "OSC received".postln;
-}}, '{}');
+}}, '{osc_path}');
 
 // Send test message
-NetAddr.localAddr.sendMsg('{}', {});
+NetAddr.localAddr.sendMsg('{osc_path}', {test_value});
 0.1.wait; // Give time for message to be processed
-"#,
-        osc_path, osc_path, test_value
+"#
     ))
     .assert(Assertion::equals("~receivedValue", test_value.into()))
     .with_cleanup("~responder.free;".to_string())
@@ -356,8 +415,7 @@ NetAddr.localAddr.sendMsg('{}', {});
 /// Test multichannel output
 pub fn test_multichannel_output(object_code: &str, expected_channels: u32) -> FunctionalTest {
     FunctionalTest::new(format!(
-        "~testObj = {}; ~channels = ~testObj.numChannels;",
-        object_code
+        "~testObj = {object_code}; ~channels = ~testObj.numChannels;"
     ))
     .assert(Assertion::equals(
         "~channels",

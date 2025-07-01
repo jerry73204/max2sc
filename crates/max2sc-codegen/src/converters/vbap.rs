@@ -28,10 +28,7 @@ impl VbapConverter {
             array.speakers.iter().map(|s| s.position.azimuth).collect();
         speaker_angles.sort_by(|a, b| a.partial_cmp(b).unwrap());
 
-        let angles: Vec<SCValue> = speaker_angles
-            .into_iter()
-            .map(|angle| SCValue::Float(angle))
-            .collect();
+        let angles: Vec<SCValue> = speaker_angles.into_iter().map(SCValue::Float).collect();
 
         Ok(SCObject::new("VBAPSpeakerSetup")
             .with_method("new")
@@ -43,10 +40,7 @@ impl VbapConverter {
             .prop("buffer_size", 512)
             .prop(
                 "comment",
-                format!(
-                    "VBAP ring setup: {} speakers, {:.2}m radius",
-                    num_speakers, radius
-                ),
+                format!("VBAP ring setup: {num_speakers} speakers, {radius:.2}m radius"),
             ))
     }
 
@@ -74,7 +68,7 @@ impl VbapConverter {
             .prop("dimension", "3D")
             .prop(
                 "comment",
-                format!("VBAP linear setup: {} speakers", num_speakers),
+                format!("VBAP linear setup: {num_speakers} speakers"),
             ))
     }
 
@@ -106,7 +100,7 @@ impl VbapConverter {
             .prop("triangulation", "auto")
             .prop(
                 "comment",
-                format!("VBAP irregular setup: {} speakers", num_speakers),
+                format!("VBAP irregular setup: {num_speakers} speakers"),
             ))
     }
 
@@ -161,8 +155,7 @@ impl VbapConverter {
             .prop(
                 "comment",
                 format!(
-                    "Distance VBAP: {} channels, {:?} compensation",
-                    num_channels, compensation_type
+                    "Distance VBAP: {num_channels} channels, {compensation_type:?} compensation"
                 ),
             ))
     }
@@ -185,10 +178,7 @@ impl VbapConverter {
             .arg(spread_method)
             .prop(
                 "comment",
-                format!(
-                    "VBAP with {} spread: {} channels",
-                    spread_method, num_channels
-                ),
+                format!("VBAP with {spread_method} spread: {num_channels} channels"),
             ))
     }
 
@@ -249,8 +239,8 @@ impl VbapConverter {
 
     /// Calculate optimal speaker triangle for a given direction
     pub fn find_optimal_triangle(
-        azimuth: f32,
-        elevation: f32,
+        _azimuth: f32,
+        _elevation: f32,
         speakers: &[max2sc_analyzer::spatial_analysis::Speaker],
     ) -> Option<(usize, usize, usize)> {
         // Simplified triangle finding - in practice this would be more complex
@@ -264,10 +254,10 @@ impl VbapConverter {
 
     /// Calculate VBAP gain factors for a speaker triangle
     pub fn calculate_vbap_gains(
-        azimuth: f32,
-        elevation: f32,
-        speaker_triangle: (usize, usize, usize),
-        speakers: &[max2sc_analyzer::spatial_analysis::Speaker],
+        _azimuth: f32,
+        _elevation: f32,
+        _speaker_triangle: (usize, usize, usize),
+        _speakers: &[max2sc_analyzer::spatial_analysis::Speaker],
     ) -> (f32, f32, f32) {
         // Simplified VBAP gain calculation
         // In practice, this would solve the VBAP matrix equation
@@ -303,8 +293,7 @@ impl VbapConverter {
                 let angle_diff = (speaker1.position.azimuth - speaker2.position.azimuth).abs();
                 if angle_diff < 10.0 {
                     result.warnings.push(format!(
-                        "Speakers {} and {} are very close ({:.1}°)",
-                        i, j, angle_diff
+                        "Speakers {i} and {j} are very close ({angle_diff:.1}°)"
                     ));
                 }
             }

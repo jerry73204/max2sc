@@ -8,7 +8,7 @@ use std::collections::HashMap;
 /// Generate OSC routers from Max patch
 pub fn generate_osc_routers(
     patch: &MaxPatch,
-    osc_config: Option<&OSCConfig>,
+    _osc_config: Option<&OSCConfig>,
 ) -> Result<Vec<OSCResponder>, CodegenError> {
     let mut responders = Vec::new();
     let mut osc_routes = HashMap::new();
@@ -138,7 +138,7 @@ fn generate_master_responder() -> OSCResponder {
 
 /// Sanitize object ID for use in variable names
 fn sanitize_id(id: &str) -> String {
-    id.replace('-', "_").replace(' ', "_")
+    id.replace(['-', ' '], "_")
 }
 
 /// Generate OSC router setup code

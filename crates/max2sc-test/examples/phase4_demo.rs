@@ -10,7 +10,6 @@
 
 use max2sc_test::{Phase4TestSuite, Result};
 use tracing::{error, info, warn};
-use tracing_subscriber;
 
 #[tokio::main]
 async fn main() -> Result<()> {

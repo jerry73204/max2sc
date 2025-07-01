@@ -10,7 +10,6 @@
 
 use crate::prelude::*;
 use crate::{AudioReference, CompileOutput, SpatialFunctionalTestSuite, SpatialTestSuite};
-use std::time::Duration;
 
 /// Complete Phase 4 test suite
 pub struct Phase4TestSuite {
@@ -513,27 +512,27 @@ impl Phase4Results {
         let phase3_passed = self
             .phase3_validation
             .as_ref()
-            .map_or(false, |r| r.all_passed());
+            .is_some_and(|r| r.all_passed());
         let advanced_wfs_passed = self
             .advanced_wfs
             .as_ref()
-            .map_or(false, |r| r.data.iter().all(|output| output.success));
+            .is_some_and(|r| r.data.iter().all(|output| output.success));
         let complex_hoa_passed = self
             .complex_hoa
             .as_ref()
-            .map_or(false, |r| r.data.iter().all(|output| output.success));
+            .is_some_and(|r| r.data.iter().all(|output| output.success));
         let binaural_passed = self
             .binaural_rendering
             .as_ref()
-            .map_or(false, |r| r.data.iter().all(|output| output.success));
+            .is_some_and(|r| r.data.iter().all(|output| output.success));
         let effects_passed = self
             .spatial_effects
             .as_ref()
-            .map_or(false, |r| r.data.iter().all(|output| output.success));
+            .is_some_and(|r| r.data.iter().all(|output| output.success));
         let performance_passed = self
             .performance
             .as_ref()
-            .map_or(false, |r| r.data.iter().all(|output| output.success));
+            .is_some_and(|r| r.data.iter().all(|output| output.success));
 
         phase3_passed
             && advanced_wfs_passed
@@ -585,7 +584,7 @@ impl Phase4Results {
             if self
                 .phase3_validation
                 .as_ref()
-                .map_or(false, |r| r.all_passed())
+                .is_some_and(|r| r.all_passed())
             {
                 "✅"
             } else {
@@ -594,7 +593,7 @@ impl Phase4Results {
             if self
                 .advanced_wfs
                 .as_ref()
-                .map_or(false, |r| r.data.iter().all(|o| o.success))
+                .is_some_and(|r| r.data.iter().all(|o| o.success))
             {
                 "✅"
             } else {
@@ -603,7 +602,7 @@ impl Phase4Results {
             if self
                 .complex_hoa
                 .as_ref()
-                .map_or(false, |r| r.data.iter().all(|o| o.success))
+                .is_some_and(|r| r.data.iter().all(|o| o.success))
             {
                 "✅"
             } else {
@@ -612,7 +611,7 @@ impl Phase4Results {
             if self
                 .binaural_rendering
                 .as_ref()
-                .map_or(false, |r| r.data.iter().all(|o| o.success))
+                .is_some_and(|r| r.data.iter().all(|o| o.success))
             {
                 "✅"
             } else {
@@ -621,7 +620,7 @@ impl Phase4Results {
             if self
                 .spatial_effects
                 .as_ref()
-                .map_or(false, |r| r.data.iter().all(|o| o.success))
+                .is_some_and(|r| r.data.iter().all(|o| o.success))
             {
                 "✅"
             } else {
@@ -630,7 +629,7 @@ impl Phase4Results {
             if self
                 .performance
                 .as_ref()
-                .map_or(false, |r| r.data.iter().all(|o| o.success))
+                .is_some_and(|r| r.data.iter().all(|o| o.success))
             {
                 "✅"
             } else {
@@ -658,18 +657,15 @@ impl Phase3ValidationResults {
     }
 
     pub fn all_passed(&self) -> bool {
-        let syntax_passed = self
-            .syntax_results
-            .as_ref()
-            .map_or(false, |r| r.all_passed());
+        let syntax_passed = self.syntax_results.as_ref().is_some_and(|r| r.all_passed());
         let functional_passed = self
             .functional_results
             .as_ref()
-            .map_or(false, |r| r.all_passed());
+            .is_some_and(|r| r.all_passed());
         let audio_passed = self
             .audio_results
             .as_ref()
-            .map_or(false, |r| r.passed_tests > 0);
+            .is_some_and(|r| r.passed_tests > 0);
 
         syntax_passed && functional_passed && audio_passed
     }

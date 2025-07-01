@@ -14,8 +14,7 @@ impl HoaConverter {
             (1, 3) => Self::generate_foa_3d_encoder(),
             (order, 3) => Self::generate_hoa_3d_encoder(order),
             _ => Err(ConversionError::UnsupportedObject(format!(
-                "Unsupported HOA configuration: order {}, dimension {}",
-                order, dimension
+                "Unsupported HOA configuration: order {order}, dimension {dimension}"
             ))),
         }
     }
@@ -62,7 +61,7 @@ impl HoaConverter {
             .prop("channels", num_channels)
             .prop(
                 "comment",
-                format!("HOA 3D encoder, order {}, {} channels", order, num_channels),
+                format!("HOA 3D encoder, order {order}, {num_channels} channels"),
             ))
     }
 
@@ -107,10 +106,7 @@ impl HoaConverter {
             .prop("order", 1)
             .prop(
                 "comment",
-                format!(
-                    "FOA decoder: {} method, {} speakers",
-                    decoder_method, num_speakers
-                ),
+                format!("FOA decoder: {decoder_method} method, {num_speakers} speakers"),
             ))
     }
 
@@ -140,8 +136,7 @@ impl HoaConverter {
             .prop(
                 "comment",
                 format!(
-                    "HOA decoder: order {}, {} method, {} speakers",
-                    order, decoder_method, num_speakers
+                    "HOA decoder: order {order}, {decoder_method} method, {num_speakers} speakers"
                 ),
             ))
     }
@@ -165,10 +160,7 @@ impl HoaConverter {
                 .arg(SCValue::Symbol("elevation".to_string()))
                 .arg(SCValue::Symbol("roll".to_string()))
                 .prop("order", order)
-                .prop(
-                    "comment",
-                    format!("HOA rotation transform, order {}", order),
-                )),
+                .prop("comment", format!("HOA rotation transform, order {order}"))),
         }
     }
 
@@ -191,7 +183,7 @@ impl HoaConverter {
                 .prop("order", 1)
                 .prop(
                     "comment",
-                    format!("FOA mirror transform: {} axis", mirror_axis),
+                    format!("FOA mirror transform: {mirror_axis} axis"),
                 )),
             _ => Ok(SCObject::new("HoaMirror")
                 .with_method("ar")
@@ -201,10 +193,7 @@ impl HoaConverter {
                 .prop("order", order)
                 .prop(
                     "comment",
-                    format!(
-                        "HOA mirror transform: {} axis, order {}",
-                        mirror_axis, order
-                    ),
+                    format!("HOA mirror transform: {mirror_axis} axis, order {order}"),
                 )),
         }
     }
@@ -226,7 +215,7 @@ impl HoaConverter {
                 .arg(SCValue::Symbol("focus_amount".to_string()))
                 .prop("focus_type", focus_method)
                 .prop("order", 1)
-                .prop("comment", format!("FOA focus transform: {}", focus_method))),
+                .prop("comment", format!("FOA focus transform: {focus_method}"))),
             _ => Ok(SCObject::new("HoaFocus")
                 .with_method("ar")
                 .arg(order)
@@ -238,7 +227,7 @@ impl HoaConverter {
                 .prop("order", order)
                 .prop(
                     "comment",
-                    format!("HOA focus transform: {}, order {}", focus_method, order),
+                    format!("HOA focus transform: {focus_method}, order {order}"),
                 )),
         }
     }
@@ -260,7 +249,7 @@ impl HoaConverter {
                 .prop("order", order)
                 .prop(
                     "comment",
-                    format!("HOA near-field compensation, order {}", order),
+                    format!("HOA near-field compensation, order {order}"),
                 )),
         }
     }
@@ -283,7 +272,7 @@ impl HoaConverter {
             .prop("to_order", to_order)
             .prop(
                 "comment",
-                format!("HOA format converter: order {} to {}", from_order, to_order),
+                format!("HOA format converter: order {from_order} to {to_order}"),
             ))
     }
 
@@ -304,7 +293,7 @@ impl HoaConverter {
                 .prop("hrtf_type", hrtf_method)
                 .prop("order", 1)
                 .prop("channels", 2)
-                .prop("comment", format!("FOA binaural decoder: {}", hrtf_method))),
+                .prop("comment", format!("FOA binaural decoder: {hrtf_method}"))),
             _ => Ok(SCObject::new("HoaBinaural")
                 .with_method("ar")
                 .arg(order)
@@ -314,7 +303,7 @@ impl HoaConverter {
                 .prop("channels", 2)
                 .prop(
                     "comment",
-                    format!("HOA binaural decoder: {}, order {}", hrtf_method, order),
+                    format!("HOA binaural decoder: {hrtf_method}, order {order}"),
                 )),
         }
     }
@@ -362,13 +351,11 @@ impl HoaConverter {
 
         if num_speakers < min_speakers {
             result.errors.push(format!(
-                "Order {} requires at least {} speakers, but only {} available",
-                order, min_speakers, num_speakers
+                "Order {order} requires at least {min_speakers} speakers, but only {num_speakers} available"
             ));
         } else if num_speakers < recommended_speakers {
             result.warnings.push(format!(
-                "Order {} works best with {} speakers, only {} available",
-                order, recommended_speakers, num_speakers
+                "Order {order} works best with {recommended_speakers} speakers, only {num_speakers} available"
             ));
         }
 
@@ -377,7 +364,7 @@ impl HoaConverter {
 
     fn calculate_recommended_order(num_speakers: u32) -> u32 {
         // Conservative estimate for good decoding quality
-        ((num_speakers as f32 / 8.0).sqrt() as u32).max(1).min(5)
+        ((num_speakers as f32 / 8.0).sqrt() as u32).clamp(1, 5)
     }
 }
 

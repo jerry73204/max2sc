@@ -18,26 +18,24 @@ pub fn generate_synth_defs(patch: &MaxPatch) -> Result<Vec<SynthDef>, CodegenErr
 /// Generate a basic SynthDef from patch objects
 fn generate_basic_synthdef(patch: &MaxPatch) -> Result<SynthDef, CodegenError> {
     let mut ugens = Vec::new();
-    let mut params = Vec::new();
-
     // Add default parameters
-    params.push(Parameter {
-        name: "freq".to_string(),
-        default_value: 440.0,
-        rate: Rate::Control,
-    });
-
-    params.push(Parameter {
-        name: "amp".to_string(),
-        default_value: 0.5,
-        rate: Rate::Control,
-    });
-
-    params.push(Parameter {
-        name: "pan".to_string(),
-        default_value: 0.0,
-        rate: Rate::Control,
-    });
+    let params = vec![
+        Parameter {
+            name: "freq".to_string(),
+            default_value: 440.0,
+            rate: Rate::Control,
+        },
+        Parameter {
+            name: "amp".to_string(),
+            default_value: 0.5,
+            rate: Rate::Control,
+        },
+        Parameter {
+            name: "pan".to_string(),
+            default_value: 0.0,
+            rate: Rate::Control,
+        },
+    ];
 
     // Check what types of objects are in the patch
     let mut has_audio = false;

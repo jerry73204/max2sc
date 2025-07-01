@@ -122,7 +122,7 @@ fn test_parse_osc_value_types() {
     let float_cmd = &config.commands[1];
     assert_eq!(float_cmd.address, "/test/float");
     if let max2sc_max_types::OSCValue::Float(f) = &float_cmd.args[0] {
-        assert!((f - 3.14159).abs() < 0.0001);
+        assert!((f - std::f32::consts::PI).abs() < 0.0001);
     } else {
         panic!("Expected float value");
     }

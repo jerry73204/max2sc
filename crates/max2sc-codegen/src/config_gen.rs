@@ -72,9 +72,8 @@ control_buses:
 "#;
 
     let bus_path = config_dir.join("buses.yaml");
-    fs::write(bus_path, bus_config).map_err(|e| {
-        CodegenError::GenerationFailed(format!("Failed to write bus config: {}", e))
-    })?;
+    fs::write(bus_path, bus_config)
+        .map_err(|e| CodegenError::GenerationFailed(format!("Failed to write bus config: {e}")))?;
 
     Ok(())
 }
@@ -90,11 +89,11 @@ fn generate_speaker_config(osc_config: &OSCConfig, config_dir: &Path) -> Result<
         yaml_content.push_str(&format!("  - bus_id: {}\n", array.bus_id));
         yaml_content.push_str(&format!("    format: \"{}\"\n", array.format));
         yaml_content.push_str(&format!("    name: \"{}\"\n", array.name));
-        yaml_content.push_str(&format!("    speakers:\n"));
+        yaml_content.push_str("    speakers:\n");
 
         for speaker in &array.speakers {
             yaml_content.push_str(&format!("      - id: {}\n", speaker.id));
-            yaml_content.push_str(&format!("        position:\n"));
+            yaml_content.push_str("        position:\n");
             yaml_content.push_str(&format!(
                 "          azimuth: {}\n",
                 speaker.position.azimuth
@@ -110,12 +109,12 @@ fn generate_speaker_config(osc_config: &OSCConfig, config_dir: &Path) -> Result<
             yaml_content.push_str(&format!("        delay: {}\n", speaker.delay));
             yaml_content.push_str(&format!("        gain: {}\n", speaker.gain));
         }
-        yaml_content.push_str("\n");
+        yaml_content.push('\n');
     }
 
     let speaker_path = config_dir.join("speakers.yaml");
     fs::write(speaker_path, yaml_content).map_err(|e| {
-        CodegenError::GenerationFailed(format!("Failed to write speaker config: {}", e))
+        CodegenError::GenerationFailed(format!("Failed to write speaker config: {e}"))
     })?;
 
     Ok(())
@@ -161,13 +160,13 @@ fn generate_server_options(patch: &MaxPatch, config_dir: &Path) -> Result<(), Co
 (
     s = Server.default;
     
-    s.options.numOutputBusChannels = {};
-    s.options.numInputBusChannels = {};
+    s.options.numOutputBusChannels = {num_outputs};
+    s.options.numInputBusChannels = {num_inputs};
     s.options.numAudioBusChannels = 1024;
     s.options.numControlBusChannels = 4096;
     s.options.numBuffers = 1024;
     s.options.numWireBufs = 256;
-    s.options.memSize = {};
+    s.options.memSize = {memory_size};
     s.options.maxNodes = 2048;
     s.options.maxSynthDefs = 512;
     
@@ -176,13 +175,12 @@ fn generate_server_options(patch: &MaxPatch, config_dir: &Path) -> Result<(), Co
     
     "Server options configured.".postln;
 )
-"#,
-        num_outputs, num_inputs, memory_size
+"#
     );
 
     let server_path = config_dir.join("server_options.scd");
     fs::write(server_path, server_options).map_err(|e| {
-        CodegenError::GenerationFailed(format!("Failed to write server options: {}", e))
+        CodegenError::GenerationFailed(format!("Failed to write server options: {e}"))
     })?;
 
     Ok(())

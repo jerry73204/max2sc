@@ -48,10 +48,7 @@ impl WfsConverter {
             .prop("aliasing_frequency", wfs_config.aliasing_frequency)
             .prop(
                 "comment",
-                format!(
-                    "WFS linear array: {} speakers, {:.2}m length",
-                    num_speakers, length
-                ),
+                format!("WFS linear array: {num_speakers} speakers, {length:.2}m length"),
             ))
     }
 
@@ -78,10 +75,7 @@ impl WfsConverter {
             .prop("amplitude_correction", wfs_config.amplitude_correction)
             .prop(
                 "comment",
-                format!(
-                    "WFS circular array: {} speakers, {:.2}m radius",
-                    num_speakers, radius
-                ),
+                format!("WFS circular array: {num_speakers} speakers, {radius:.2}m radius"),
             ))
     }
 
@@ -126,7 +120,7 @@ impl WfsConverter {
             .prop("distance_compensation", wfs_config.distance_compensation)
             .prop(
                 "comment",
-                format!("WFS irregular array: {} speakers", num_speakers),
+                format!("WFS irregular array: {num_speakers} speakers"),
             ))
     }
 

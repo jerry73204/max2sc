@@ -201,8 +201,7 @@ impl AudioTest {
         // Check if rendering was successful
         if !output_path.exists() {
             return Err(TestError::AudioFile(format!(
-                "Audio rendering failed. Stdout: {}, Stderr: {}",
-                stdout, stderr
+                "Audio rendering failed. Stdout: {stdout}, Stderr: {stderr}"
             )));
         }
 
@@ -261,7 +260,7 @@ Server.default.waitForBoot {{
     /// Load audio file into memory
     fn load_audio(&self, path: &Path) -> Result<Vec<Vec<f32>>> {
         let mut reader = WavReader::open(path)
-            .map_err(|e| TestError::AudioFile(format!("Failed to open audio file: {}", e)))?;
+            .map_err(|e| TestError::AudioFile(format!("Failed to open audio file: {e}")))?;
 
         let spec = reader.spec();
         let mut samples: Vec<Vec<f32>> = vec![Vec::new(); spec.channels as usize];
@@ -271,7 +270,7 @@ Server.default.waitForBoot {{
                 let max_val = (1_i32 << (spec.bits_per_sample - 1)) as f32;
                 for (i, sample) in reader.samples::<i32>().enumerate() {
                     let sample = sample
-                        .map_err(|e| TestError::AudioFile(format!("Sample read error: {}", e)))?;
+                        .map_err(|e| TestError::AudioFile(format!("Sample read error: {e}")))?;
                     let normalized = sample as f32 / max_val;
                     samples[i % (spec.channels as usize)].push(normalized);
                 }
@@ -279,7 +278,7 @@ Server.default.waitForBoot {{
             SampleFormat::Float => {
                 for (i, sample) in reader.samples::<f32>().enumerate() {
                     let sample = sample
-                        .map_err(|e| TestError::AudioFile(format!("Sample read error: {}", e)))?;
+                        .map_err(|e| TestError::AudioFile(format!("Sample read error: {e}")))?;
                     samples[i % (spec.channels as usize)].push(sample);
                 }
             }
@@ -439,8 +438,8 @@ Server.default.waitForBoot {{
     /// Analyze frequency domain characteristics
     fn analyze_frequency_domain(
         &self,
-        test: &[f32],
-        reference: &[f32],
+        _test: &[f32],
+        _reference: &[f32],
     ) -> Result<FrequencyAnalysis> {
         // Simplified frequency analysis - would be expanded in full implementation
         Ok(FrequencyAnalysis {
@@ -452,7 +451,7 @@ Server.default.waitForBoot {{
     }
 
     /// Analyze time domain characteristics
-    fn analyze_time_domain(&self, test: &[f32], reference: &[f32]) -> TimeAnalysis {
+    fn analyze_time_domain(&self, _test: &[f32], _reference: &[f32]) -> TimeAnalysis {
         // Simplified time analysis - would be expanded in full implementation
         TimeAnalysis {
             zcr_difference: 0.0,
@@ -462,7 +461,7 @@ Server.default.waitForBoot {{
     }
 
     /// Calculate comprehensive audio metrics
-    fn calculate_audio_metrics(&self, audio: &[f32]) -> AudioMetrics {
+    fn calculate_audio_metrics(&self, _audio: &[f32]) -> AudioMetrics {
         // Simplified metrics calculation - would be expanded in full implementation
         AudioMetrics {
             snr_db: 60.0,

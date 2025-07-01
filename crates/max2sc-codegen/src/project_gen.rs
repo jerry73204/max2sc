@@ -74,7 +74,7 @@ impl Default for ProjectGenerator {
 fn generate_project_with_options(
     patch: &MaxPatch,
     output_dir: &Path,
-    options: &ProjectGenerator,
+    _options: &ProjectGenerator,
 ) -> Result<SCProject, CodegenError> {
     // Create output directory structure
     create_project_directories(output_dir)?;
@@ -85,11 +85,7 @@ fn generate_project_with_options(
         synth_defs: generate_basic_synthdefs(patch)?,
         patterns: Vec::new(), // Will be populated later
         bus_config: generate_basic_bus_config(),
-        osc_responders: if options.skip_osc {
-            Vec::new()
-        } else {
-            Vec::new()
-        }, // Will be populated later
+        osc_responders: Vec::new(), // Will be populated later
         init_code: generate_init_code(patch),
         cleanup_code: Some(generate_cleanup_code()),
     };
@@ -127,7 +123,7 @@ fn generate_speaker_config(config: &OSCConfig, output_dir: &Path) -> Result<(), 
     content.push_str(")\n");
 
     fs::write(&speaker_file, content).map_err(|e| {
-        CodegenError::GenerationFailed(format!("Failed to write speaker config: {}", e))
+        CodegenError::GenerationFailed(format!("Failed to write speaker config: {e}"))
     })?;
 
     Ok(())
@@ -156,19 +152,19 @@ pub fn generate_project(patch: &MaxPatch, output_dir: &Path) -> Result<SCProject
 
 fn create_project_directories(output_dir: &Path) -> Result<(), CodegenError> {
     fs::create_dir_all(output_dir).map_err(|e| {
-        CodegenError::GenerationFailed(format!("Failed to create output directory: {}", e))
+        CodegenError::GenerationFailed(format!("Failed to create output directory: {e}"))
     })?;
 
     fs::create_dir_all(output_dir.join("config")).map_err(|e| {
-        CodegenError::GenerationFailed(format!("Failed to create config directory: {}", e))
+        CodegenError::GenerationFailed(format!("Failed to create config directory: {e}"))
     })?;
 
     fs::create_dir_all(output_dir.join("lib")).map_err(|e| {
-        CodegenError::GenerationFailed(format!("Failed to create lib directory: {}", e))
+        CodegenError::GenerationFailed(format!("Failed to create lib directory: {e}"))
     })?;
 
     fs::create_dir_all(output_dir.join("assets")).map_err(|e| {
-        CodegenError::GenerationFailed(format!("Failed to create assets directory: {}", e))
+        CodegenError::GenerationFailed(format!("Failed to create assets directory: {e}"))
     })?;
 
     Ok(())
@@ -388,7 +384,7 @@ fn generate_init_code(patch: &MaxPatch) -> String {
     format!(
         r#"// Auto-generated SuperCollider project
 // Converted from Max MSP 8 patch
-// Original patch had {} objects and {} connections
+// Original patch had {num_boxes} objects and {num_lines} connections
 
 (
     var server = Server.default;
@@ -432,8 +428,7 @@ fn generate_init_code(patch: &MaxPatch) -> String {
         loadProject.value;
     }});
 )
-"#,
-        num_boxes, num_lines
+"#
     )
 }
 
@@ -457,13 +452,13 @@ fn write_project_files(project: &SCProject, output_dir: &Path) -> Result<(), Cod
     // Write main file
     let main_path = output_dir.join(&project.main_file);
     fs::write(&main_path, &project.init_code)
-        .map_err(|e| CodegenError::GenerationFailed(format!("Failed to write main file: {}", e)))?;
+        .map_err(|e| CodegenError::GenerationFailed(format!("Failed to write main file: {e}")))?;
 
     // Write cleanup file
     if let Some(cleanup) = &project.cleanup_code {
         let cleanup_path = output_dir.join("cleanup.scd");
         fs::write(&cleanup_path, cleanup).map_err(|e| {
-            CodegenError::GenerationFailed(format!("Failed to write cleanup file: {}", e))
+            CodegenError::GenerationFailed(format!("Failed to write cleanup file: {e}"))
         })?;
     }
 
@@ -471,22 +466,21 @@ fn write_project_files(project: &SCProject, output_dir: &Path) -> Result<(), Cod
     let synthdefs_content = generate_synthdefs_file(&project.synth_defs);
     let synthdefs_path = output_dir.join("lib").join("SynthDefs.scd");
     fs::write(&synthdefs_path, synthdefs_content).map_err(|e| {
-        CodegenError::GenerationFailed(format!("Failed to write SynthDefs file: {}", e))
+        CodegenError::GenerationFailed(format!("Failed to write SynthDefs file: {e}"))
     })?;
 
     // Write bus configuration
     let bus_config_content = generate_bus_config_file(&project.bus_config);
     let bus_config_path = output_dir.join("config").join("buses.yaml");
     fs::write(&bus_config_path, bus_config_content).map_err(|e| {
-        CodegenError::GenerationFailed(format!("Failed to write bus config file: {}", e))
+        CodegenError::GenerationFailed(format!("Failed to write bus config file: {e}"))
     })?;
 
     // Write README
     let readme_content = generate_readme();
     let readme_path = output_dir.join("README.md");
-    fs::write(&readme_path, readme_content).map_err(|e| {
-        CodegenError::GenerationFailed(format!("Failed to write README file: {}", e))
-    })?;
+    fs::write(&readme_path, readme_content)
+        .map_err(|e| CodegenError::GenerationFailed(format!("Failed to write README file: {e}")))?;
 
     Ok(())
 }
@@ -526,7 +520,7 @@ fn generate_bus_config_file(bus_config: &BusConfig) -> String {
         content.push_str(&format!("  - index: {}\n", bus.index));
         content.push_str(&format!("    channels: {}\n", bus.num_channels));
         if let Some(name) = &bus.name {
-            content.push_str(&format!("    name: \"{}\"\n", name));
+            content.push_str(&format!("    name: \"{name}\"\n"));
         }
         content.push_str(&format!("    private: {}\n", bus.private));
     }
@@ -536,7 +530,7 @@ fn generate_bus_config_file(bus_config: &BusConfig) -> String {
         content.push_str(&format!("  - index: {}\n", bus.index));
         content.push_str(&format!("    default: {}\n", bus.default_value));
         if let Some(name) = &bus.name {
-            content.push_str(&format!("    name: \"{}\"\n", name));
+            content.push_str(&format!("    name: \"{name}\"\n"));
         }
     }
 

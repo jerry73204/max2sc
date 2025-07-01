@@ -9,15 +9,21 @@ pub fn analyze_spatial_config(
     patch: &MaxPatch,
     osc_config: Option<&OSCConfig>,
 ) -> Result<SpatialConfig, AnalysisError> {
-    let mut config = SpatialConfig::default();
-
     // Analyze Max patch for spatial objects
-    config.spatial_objects = analyze_spatial_objects(patch)?;
+    let spatial_objects = analyze_spatial_objects(patch)?;
 
     // Analyze speaker configuration from OSC config
-    if let Some(osc) = osc_config {
-        config.speaker_arrays = analyze_speaker_arrays(osc)?;
-    }
+    let speaker_arrays = if let Some(osc) = osc_config {
+        analyze_speaker_arrays(osc)?
+    } else {
+        Vec::new()
+    };
+
+    let mut config = SpatialConfig {
+        spatial_objects,
+        speaker_arrays,
+        ..Default::default()
+    };
 
     // Determine optimal spatial processing method
     config.processing_method = determine_processing_method(&config);
@@ -40,7 +46,7 @@ fn analyze_spatial_objects(patch: &MaxPatch) -> Result<Vec<SpatialObject>, Analy
                         object_type: SpatialObjectType::Panoramix,
                         inputs: obj.content.numinlets,
                         outputs: obj.content.numoutlets,
-                        format: AudioFormat::Multichannel(obj.content.numoutlets as u32),
+                        format: AudioFormat::Multichannel(obj.content.numoutlets),
                         parameters: parse_panoramix_params(text),
                     });
                 }
@@ -65,7 +71,7 @@ fn analyze_spatial_objects(patch: &MaxPatch) -> Result<Vec<SpatialObject>, Analy
                         object_type: SpatialObjectType::HoaDecoder { order },
                         inputs: obj.content.numinlets,
                         outputs: obj.content.numoutlets,
-                        format: AudioFormat::Multichannel(obj.content.numoutlets as u32),
+                        format: AudioFormat::Multichannel(obj.content.numoutlets),
                         parameters: Vec::new(),
                     });
                 }
@@ -86,7 +92,7 @@ fn analyze_spatial_objects(patch: &MaxPatch) -> Result<Vec<SpatialObject>, Analy
                         object_type: SpatialObjectType::Generic(obj_name.to_string()),
                         inputs: obj.content.numinlets,
                         outputs: obj.content.numoutlets,
-                        format: AudioFormat::Multichannel(obj.content.numoutlets as u32),
+                        format: AudioFormat::Multichannel(obj.content.numoutlets),
                         parameters: Vec::new(),
                     });
                 }
@@ -173,7 +179,7 @@ fn determine_processing_method(config: &SpatialConfig) -> SpatialProcessingMetho
 
 // Helper functions
 
-fn parse_panoramix_params(text: &str) -> Vec<SpatialParameter> {
+fn parse_panoramix_params(_text: &str) -> Vec<SpatialParameter> {
     // Parse spat5.panoramix~ parameters
     Vec::new() // TODO: Implement parameter parsing
 }

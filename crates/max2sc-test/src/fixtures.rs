@@ -96,12 +96,12 @@ impl TestFixture {
         let patch_json = serde_json::to_string_pretty(&self.patch).map_err(TestError::Json)?;
 
         let mut temp_file = NamedTempFile::new()
-            .map_err(|e| TestError::other(format!("Failed to create temp file: {}", e)))?;
+            .map_err(|e| TestError::other(format!("Failed to create temp file: {e}")))?;
 
         use std::io::Write;
         temp_file
             .write_all(patch_json.as_bytes())
-            .map_err(|e| TestError::other(format!("Failed to write temp file: {}", e)))?;
+            .map_err(|e| TestError::other(format!("Failed to write temp file: {e}")))?;
 
         Ok(temp_file)
     }
@@ -110,7 +110,7 @@ impl TestFixture {
     pub async fn load_from_file(path: &Path) -> Result<Self> {
         let content = tokio::fs::read_to_string(path)
             .await
-            .map_err(|e| TestError::other(format!("Failed to read file: {}", e)))?;
+            .map_err(|e| TestError::other(format!("Failed to read file: {e}")))?;
 
         let patch: MaxPatch = serde_json::from_str(&content).map_err(TestError::Json)?;
 
@@ -245,7 +245,7 @@ impl TestData {
             Self::create_box(
                 "obj-1",
                 "newobj",
-                Some(format!("cycle~ {}", frequency)),
+                Some(format!("cycle~ {frequency}")),
                 2,
                 1,
                 [50.0, 50.0, 100.0, 20.0],
@@ -269,14 +269,12 @@ impl TestData {
 
         let patch = MaxPatch { patcher };
 
-        TestFixture::new(format!("simple_sine_{}", frequency), patch)
+        TestFixture::new(format!("simple_sine_{frequency}"), patch)
             .with_metadata(TestMetadata::basic_audio(format!(
-                "Simple sine wave at {} Hz",
-                frequency
+                "Simple sine wave at {frequency} Hz"
             )))
             .with_expected_sc(format!(
-                "SynthDef(\\simpleSine, {{ Out.ar(0, SinOsc.ar({}, 0, 0.5).dup) }}).play;",
-                frequency
+                "SynthDef(\\simpleSine, {{ Out.ar(0, SinOsc.ar({frequency}, 0, 0.5).dup) }}).play;"
             ))
     }
 
@@ -297,7 +295,7 @@ impl TestData {
             Self::create_box(
                 "obj-2",
                 "newobj",
-                Some(format!("mc.dac~ 1-{}", channels)),
+                Some(format!("mc.dac~ 1-{channels}")),
                 1,
                 0,
                 [50.0, 100.0, 100.0, 20.0],
@@ -307,8 +305,8 @@ impl TestData {
         patcher.lines = vec![Self::create_line("obj-1", 0, "obj-2", 0)];
         let patch = MaxPatch { patcher };
 
-        TestFixture::new(format!("multichannel_router_{}", channels), patch).with_metadata(
-            TestMetadata::multichannel(format!("{}-channel noise router", channels)),
+        TestFixture::new(format!("multichannel_router_{channels}"), patch).with_metadata(
+            TestMetadata::multichannel(format!("{channels}-channel noise router")),
         )
     }
 

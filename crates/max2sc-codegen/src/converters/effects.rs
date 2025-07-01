@@ -156,9 +156,9 @@ impl EffectsConverter {
             .arg(SCValue::Symbol("delay_time".to_string()))
             .arg(angle_of_incidence)
             .arg(absorption_coeff)
-            .prop("material", format!("{:?}", wall_material))
+            .prop("material", format!("{wall_material:?}"))
             .prop("frequency_dependent", true)
-            .prop("comment", format!("Wall reflection: {:?}", wall_material)))
+            .prop("comment", format!("Wall reflection: {wall_material:?}")))
     }
 
     /// Generate diffuse reflection field
@@ -191,9 +191,9 @@ impl EffectsConverter {
             .arg(low_abs) // 125 Hz
             .arg(mid_abs) // 1 kHz
             .arg(high_abs) // 8 kHz
-            .prop("material", format!("{:?}", material))
+            .prop("material", format!("{material:?}"))
             .prop("octave_bands", 8)
-            .prop("comment", format!("Frequency absorption: {:?}", material)))
+            .prop("comment", format!("Frequency absorption: {material:?}")))
     }
 }
 

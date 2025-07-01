@@ -41,8 +41,8 @@ impl SCValue {
         match self {
             SCValue::Float(f) => f.to_string(),
             SCValue::Int(i) => i.to_string(),
-            SCValue::String(s) => format!("\"{}\"", s),
-            SCValue::Symbol(s) => format!("\\{}", s),
+            SCValue::String(s) => format!("\"{s}\""),
+            SCValue::Symbol(s) => format!("\\{s}"),
             SCValue::Array(arr) => {
                 let items: Vec<String> = arr.iter().map(|v| v.to_code()).collect();
                 format!("[{}]", items.join(", "))

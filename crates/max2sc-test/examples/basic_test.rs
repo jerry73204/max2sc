@@ -11,7 +11,7 @@ async fn main() -> Result<()> {
     let runner = match SCTestRunner::new() {
         Ok(runner) => runner,
         Err(e) => {
-            println!("⚠️  SuperCollider not found: {}", e);
+            println!("⚠️  SuperCollider not found: {e}");
             println!(
                 "📋 To run this example, install SuperCollider and ensure 'sclang' is in your PATH"
             );

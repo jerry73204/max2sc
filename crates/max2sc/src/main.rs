@@ -1,10 +1,4 @@
-use clap::{Arg, ArgAction, Command};
-use eyre::{eyre, Result, WrapErr};
-use max2sc_analyzer::graph::SignalFlowGraph;
-use max2sc_codegen::project_gen::ProjectGenerator;
-use max2sc_parser::json_parser::parse_patch_file;
-use std::path::{Path, PathBuf};
-use tracing::{error, info, warn};
+use eyre::Result;
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
 mod cli;

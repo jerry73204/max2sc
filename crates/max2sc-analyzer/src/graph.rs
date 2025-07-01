@@ -64,10 +64,10 @@ pub fn build_signal_flow_graph(patch: &MaxPatch) -> Result<SignalFlowGraph, Anal
         // Find corresponding node indices
         let source_idx = node_map
             .get(&source_id)
-            .ok_or_else(|| AnalysisError::InvalidRouting)?;
+            .ok_or(AnalysisError::InvalidRouting)?;
         let dest_idx = node_map
             .get(&dest_id)
-            .ok_or_else(|| AnalysisError::InvalidRouting)?;
+            .ok_or(AnalysisError::InvalidRouting)?;
 
         // Determine connection type based on object types
         let source_node = graph.node_weight(*source_idx).unwrap();
@@ -127,10 +127,10 @@ fn determine_connection_type(
     }
 
     // Control connections from control objects or to control parameters
-    if source_node.object_type == "newobj" {
-        if source_text.starts_with("line") || source_text.starts_with("ramp") {
-            return ConnectionType::Control;
-        }
+    if source_node.object_type == "newobj"
+        && (source_text.starts_with("line") || source_text.starts_with("ramp"))
+    {
+        return ConnectionType::Control;
     }
 
     // Default for other connections

@@ -5,7 +5,6 @@
 
 use crate::prelude::*;
 use crate::FunctionalOutput;
-use std::collections::HashMap;
 
 /// Functional test suite for spatial audio objects
 pub struct SpatialFunctionalTestSuite {
@@ -459,7 +458,7 @@ impl SpatialFunctionalResults {
         let check_result = |result: &Option<TestResult<Vec<FunctionalOutput>>>| {
             result
                 .as_ref()
-                .map_or(false, |r| r.data.iter().all(|output| output.success))
+                .is_some_and(|r| r.data.iter().all(|output| output.success))
         };
 
         check_result(&self.spat5_instantiation)

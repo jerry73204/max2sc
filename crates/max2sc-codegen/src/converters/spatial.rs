@@ -60,7 +60,7 @@ impl SpatialConverter {
     fn convert_pan4(args: &[&str]) -> Result<SCObject> {
         // pan4~ is quad panning with X/Y positions
         let x_pos = args
-            .get(0)
+            .first()
             .and_then(|s| s.parse::<f32>().ok())
             .unwrap_or(0.0);
         let y_pos = args
@@ -112,7 +112,7 @@ impl SpatialConverter {
     fn convert_matrix(args: &[&str], content: &BoxContent) -> Result<SCObject> {
         // matrix~ is a routing matrix
         let num_ins = args
-            .get(0)
+            .first()
             .and_then(|s| s.parse::<i32>().ok())
             .unwrap_or(content.numinlets as i32);
         let num_outs = args
@@ -125,7 +125,7 @@ impl SpatialConverter {
             .arg(num_ins)
             .arg(num_outs)
             .arg(SCValue::Symbol("input".to_string()))
-            .prop("comment", format!("matrix~ {}x{}", num_ins, num_outs)))
+            .prop("comment", format!("matrix~ {num_ins}x{num_outs}")))
     }
 
     /// SPAT5 object conversion with detailed implementations
@@ -144,7 +144,7 @@ impl SpatialConverter {
                 // Generic SPAT5 placeholder for unimplemented objects
                 Ok(SCObject::new("SPAT5_Placeholder")
                     .arg(obj_name)
-                    .prop("comment", format!("{} - needs implementation", obj_name)))
+                    .prop("comment", format!("{obj_name} - needs implementation")))
             }
         }
     }
@@ -152,7 +152,10 @@ impl SpatialConverter {
     /// Convert spat5.panoramix~ - the main SPAT5 spatialization engine
     fn convert_spat5_panoramix(args: &[&str]) -> Result<SCObject> {
         // Parse arguments: numInputs, numOutputs, room model, etc.
-        let num_inputs = args.get(0).and_then(|s| s.parse::<i32>().ok()).unwrap_or(1);
+        let num_inputs = args
+            .first()
+            .and_then(|s| s.parse::<i32>().ok())
+            .unwrap_or(1);
         let num_outputs = args.get(1).and_then(|s| s.parse::<i32>().ok()).unwrap_or(8);
 
         // spat5.panoramix~ is a complex multichannel spatializer
@@ -176,7 +179,10 @@ impl SpatialConverter {
 
     /// Convert spat5.pan~ - flexible panning object
     fn convert_spat5_pan(args: &[&str]) -> Result<SCObject> {
-        let num_outputs = args.get(0).and_then(|s| s.parse::<i32>().ok()).unwrap_or(8);
+        let num_outputs = args
+            .first()
+            .and_then(|s| s.parse::<i32>().ok())
+            .unwrap_or(8);
 
         Ok(SCObject::new("VBAP")
             .with_method("ar")
@@ -201,7 +207,10 @@ impl SpatialConverter {
 
     /// Convert spat5.hoa.encoder~ - Higher Order Ambisonics encoder
     fn convert_spat5_hoa_encoder(args: &[&str]) -> Result<SCObject> {
-        let order = args.get(0).and_then(|s| s.parse::<i32>().ok()).unwrap_or(1); // Default to first order
+        let order = args
+            .first()
+            .and_then(|s| s.parse::<i32>().ok())
+            .unwrap_or(1); // Default to first order
 
         match order {
             1 => {
@@ -222,14 +231,17 @@ impl SpatialConverter {
                     .arg(SCValue::Symbol("input".to_string()))
                     .arg(SCValue::Symbol("azimuth".to_string()))
                     .arg(SCValue::Symbol("elevation".to_string()))
-                    .prop("comment", format!("spat5.hoa.encoder~ (order {})", order)))
+                    .prop("comment", format!("spat5.hoa.encoder~ (order {order})")))
             }
         }
     }
 
     /// Convert spat5.hoa.decoder~ - HOA decoder
     fn convert_spat5_hoa_decoder(args: &[&str]) -> Result<SCObject> {
-        let order = args.get(0).and_then(|s| s.parse::<i32>().ok()).unwrap_or(1);
+        let order = args
+            .first()
+            .and_then(|s| s.parse::<i32>().ok())
+            .unwrap_or(1);
         let num_speakers = args.get(1).and_then(|s| s.parse::<i32>().ok()).unwrap_or(8);
 
         match order {
@@ -249,14 +261,17 @@ impl SpatialConverter {
                     .arg(order)
                     .arg(num_speakers)
                     .arg(SCValue::Symbol("encoded_input".to_string()))
-                    .prop("comment", format!("spat5.hoa.decoder~ (order {})", order)))
+                    .prop("comment", format!("spat5.hoa.decoder~ (order {order})")))
             }
         }
     }
 
     /// Convert spat5.hoa.rotate~ - HOA rotation
     fn convert_spat5_hoa_rotate(args: &[&str]) -> Result<SCObject> {
-        let order = args.get(0).and_then(|s| s.parse::<i32>().ok()).unwrap_or(1);
+        let order = args
+            .first()
+            .and_then(|s| s.parse::<i32>().ok())
+            .unwrap_or(1);
 
         match order {
             1 => Ok(SCObject::new("FoaRotate")
@@ -272,13 +287,16 @@ impl SpatialConverter {
                 .arg(SCValue::Symbol("encoded_input".to_string()))
                 .arg(SCValue::Symbol("azimuth".to_string()))
                 .arg(SCValue::Symbol("elevation".to_string()))
-                .prop("comment", format!("spat5.hoa.rotate~ (order {})", order))),
+                .prop("comment", format!("spat5.hoa.rotate~ (order {order})"))),
         }
     }
 
     /// Convert spat5.vbap~ - Vector Based Amplitude Panning
     fn convert_spat5_vbap(args: &[&str]) -> Result<SCObject> {
-        let num_speakers = args.get(0).and_then(|s| s.parse::<i32>().ok()).unwrap_or(8);
+        let num_speakers = args
+            .first()
+            .and_then(|s| s.parse::<i32>().ok())
+            .unwrap_or(8);
 
         Ok(SCObject::new("VBAP")
             .with_method("ar")
@@ -293,7 +311,10 @@ impl SpatialConverter {
 
     /// Convert spat5.reverb~ - spatial reverb
     fn convert_spat5_reverb(args: &[&str]) -> Result<SCObject> {
-        let num_outputs = args.get(0).and_then(|s| s.parse::<i32>().ok()).unwrap_or(2);
+        let num_outputs = args
+            .first()
+            .and_then(|s| s.parse::<i32>().ok())
+            .unwrap_or(2);
 
         Ok(SCObject::new("JPverb")
             .with_method("ar")
@@ -314,7 +335,10 @@ impl SpatialConverter {
 
     /// Convert spat5.early~ - early reflections
     fn convert_spat5_early_reflections(args: &[&str]) -> Result<SCObject> {
-        let num_taps = args.get(0).and_then(|s| s.parse::<i32>().ok()).unwrap_or(8);
+        let num_taps = args
+            .first()
+            .and_then(|s| s.parse::<i32>().ok())
+            .unwrap_or(8);
 
         Ok(SCObject::new("EarlyReflections")
             .with_method("ar")
@@ -332,14 +356,14 @@ impl SpatialConverter {
 }
 
 /// Helper to convert Max pan position to SC pan position
-fn max_to_sc_pan(max_pos: f32) -> f32 {
+fn _max_to_sc_pan(max_pos: f32) -> f32 {
     // Max: 0 = left, 1 = right
     // SC: -1 = left, 1 = right
     (max_pos * 2.0) - 1.0
 }
 
 /// Helper to convert degrees to radians
-fn deg_to_rad(deg: f32) -> f32 {
+fn _deg_to_rad(deg: f32) -> f32 {
     deg * std::f32::consts::PI / 180.0
 }
 

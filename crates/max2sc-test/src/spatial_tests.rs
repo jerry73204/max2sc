@@ -5,7 +5,6 @@
 
 use crate::prelude::*;
 use crate::CompileOutput;
-use std::collections::HashMap;
 
 /// Test suite for all Phase 3 spatial features
 pub struct SpatialTestSuite {
@@ -414,7 +413,7 @@ impl SpatialTestResults {
         let check_result = |result: &Option<TestResult<Vec<CompileOutput>>>| {
             result
                 .as_ref()
-                .map_or(false, |r| r.data.iter().all(|output| output.success))
+                .is_some_and(|r| r.data.iter().all(|output| output.success))
         };
 
         check_result(&self.spat5)
@@ -471,7 +470,7 @@ mod tests {
 
     #[test]
     fn test_spatial_results_tracking() {
-        let mut results = SpatialTestResults::new();
+        let results = SpatialTestResults::new();
         assert_eq!(results.total_tests(), 0);
         assert_eq!(results.passed_tests(), 0);
         assert!(!results.all_passed());

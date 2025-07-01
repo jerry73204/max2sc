@@ -25,3 +25,6 @@ max2sc-spatial = { path = "../max2sc-spatial" }
 [dev-dependencies]
 pretty_assertions = { workspace = true }
 tempfile = { workspace = true }
+tokio = { workspace = true, features = ["full"] }
+max2sc-test = { path = "../max2sc-test" }
+serde_json = { workspace = true }

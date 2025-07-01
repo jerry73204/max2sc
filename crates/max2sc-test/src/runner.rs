@@ -6,7 +6,7 @@ use std::time::Duration;
 use tempfile::TempDir;
 use tokio::process::{Child, Command};
 use tokio::time::timeout;
-use tracing::{debug, info, warn};
+use tracing::{debug, info};
 
 /// Test categories for different types of validation
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
@@ -98,7 +98,7 @@ impl SCTestRunner {
 
         // Create temporary directory for test files
         let temp_dir = TempDir::new()
-            .map_err(|e| TestError::other(format!("Failed to create temp dir: {}", e)))?;
+            .map_err(|e| TestError::other(format!("Failed to create temp dir: {e}")))?;
 
         Ok(Self {
             sclang_path,
@@ -158,18 +158,23 @@ impl SCTestRunner {
         let path = self.temp_dir.path().join(name);
         tokio::fs::write(&path, content)
             .await
-            .map_err(|e| TestError::other(format!("Failed to write temp file: {}", e)))?;
+            .map_err(|e| TestError::other(format!("Failed to write temp file: {e}")))?;
         Ok(path)
     }
 
     /// Execute sclang with the given arguments
     pub async fn execute_sclang(&self, args: Vec<String>) -> Result<(String, String)> {
         let mut cmd = Command::new(&self.sclang_path);
+
+        // Add -i none flag to disable IDE
+        cmd.arg("-i").arg("none");
         cmd.args(&args);
 
         // Set environment for non-interactive mode
         cmd.env("SC_JACK_DEFAULT_OUTPUTS", "system")
-            .env("SC_JACK_DEFAULT_INPUTS", "system");
+            .env("SC_JACK_DEFAULT_INPUTS", "system")
+            .env("QT_QPA_PLATFORM", "offscreen") // Run Qt in offscreen mode
+            .env("SC_DISABLE_IDE", "1"); // Disable IDE components
 
         debug!("Executing sclang with args: {:?}", args);
 
@@ -205,7 +210,11 @@ impl SCTestRunner {
             .await?;
 
         cmd.arg("-D") // Don't run startup file
-            .arg(config_file);
+            .arg(config_file)
+            .env("QT_QPA_PLATFORM", "offscreen")
+            .env("SC_DISABLE_IDE", "1")
+            .env("SC_JACK_DEFAULT_OUTPUTS", "system")
+            .env("SC_JACK_DEFAULT_INPUTS", "system");
 
         cmd.spawn().map_err(TestError::ProcessSpawn)
     }

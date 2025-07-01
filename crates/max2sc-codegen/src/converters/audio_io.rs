@@ -139,7 +139,7 @@ impl AudioIOConverter {
         Ok(SCObject::new("Out")
             .arg(outlet_num - 1)
             .arg(SCValue::Symbol("signal".to_string()))
-            .prop("comment", format!("out~ {}", outlet_num)))
+            .prop("comment", format!("out~ {outlet_num}")))
     }
 
     /// Convert in~ (inlet) - used in subpatchers
@@ -151,12 +151,12 @@ impl AudioIOConverter {
 
         Ok(SCObject::new("In")
             .arg(inlet_num - 1)
-            .prop("comment", format!("in~ {}", inlet_num)))
+            .prop("comment", format!("in~ {inlet_num}")))
     }
 }
 
 /// Helper function to parse channel lists from Max format
-fn parse_channel_list(text: &str) -> Vec<i32> {
+fn _parse_channel_list(text: &str) -> Vec<i32> {
     let mut channels = Vec::new();
     let parts: Vec<&str> = text.split_whitespace().collect();
 

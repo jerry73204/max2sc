@@ -3,8 +3,7 @@
 use crate::error::{Result, TestError};
 use crate::runner::SCTestRunner;
 use regex::Regex;
-use std::collections::HashMap;
-use tracing::{debug, info};
+use tracing::info;
 
 /// Syntax test configuration
 #[derive(Debug, Clone)]
@@ -93,14 +92,18 @@ impl SyntaxTest {
 
     /// Run the syntax test
     pub async fn run(&self, runner: &SCTestRunner) -> Result<CompileOutput> {
-        // Create temporary file with the code
+        // Add exit command to the code so sclang doesn't hang
+        let test_code = format!("{}\n\n// Exit after compilation\n0.exit;\n", self.code);
+
+        // Create temporary file with the test code
         let file_path = runner
-            .create_temp_file("test_syntax.scd", &self.code)
+            .create_temp_file("test_syntax.scd", &test_code)
             .await?;
 
         // Build sclang arguments
         let mut args = vec![
-            "-d".to_string(), // Just parse, don't execute
+            "-i".to_string(),
+            "none".to_string(), // Disable IDE
             file_path.to_string_lossy().to_string(),
         ];
         args.extend(self.flags.clone());
@@ -228,28 +231,27 @@ impl SyntaxTest {
                 if output.success {
                     return Err(TestError::AssertionFailed {
                         message: format!(
-                            "Expected compilation to fail with pattern '{}', but it succeeded",
-                            pattern
+                            "Expected compilation to fail with pattern '{pattern}', but it succeeded"
                         ),
                     });
                 }
 
                 let regex = Regex::new(pattern)
-                    .map_err(|e| TestError::other(format!("Invalid error pattern: {}", e)))?;
+                    .map_err(|e| TestError::other(format!("Invalid error pattern: {e}")))?;
 
                 if !output.errors.iter().any(|e| regex.is_match(&e.message)) {
                     return Err(TestError::AssertionFailed {
-                        message: format!("No error matched pattern '{}'", pattern),
+                        message: format!("No error matched pattern '{pattern}'"),
                     });
                 }
             }
             CompileExpectation::Warning(pattern) => {
                 let regex = Regex::new(pattern)
-                    .map_err(|e| TestError::other(format!("Invalid warning pattern: {}", e)))?;
+                    .map_err(|e| TestError::other(format!("Invalid warning pattern: {e}")))?;
 
                 if !output.warnings.iter().any(|w| regex.is_match(&w.message)) {
                     return Err(TestError::AssertionFailed {
-                        message: format!("No warning matched pattern '{}'", pattern),
+                        message: format!("No warning matched pattern '{pattern}'"),
                     });
                 }
             }

@@ -507,8 +507,11 @@ dependencies = [
  "max2sc-parser",
  "max2sc-sc-types",
  "max2sc-spatial",
+ "max2sc-test",
  "pretty_assertions",
+ "serde_json",
  "tempfile",
+ "tokio",
  "tracing",
  "tracing-subscriber",
 ]

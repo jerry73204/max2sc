@@ -87,36 +87,36 @@ impl Assertion {
     /// Get assertion description
     pub fn description(&self) -> String {
         match self {
-            Self::NotNil(var) => format!("{} is not nil", var),
-            Self::Equals(var, value) => format!("{} equals {}", var, value),
+            Self::NotNil(var) => format!("{var} is not nil"),
+            Self::Equals(var, value) => format!("{var} equals {value}"),
             Self::Approximately(var, expected, tolerance) => {
-                format!("{} approximately equals {} (±{})", var, expected, tolerance)
+                format!("{var} approximately equals {expected} (±{tolerance})")
             }
-            Self::RespondsTo(obj, method) => format!("{} responds to {}", obj, method),
-            Self::ChannelCount(obj, channels) => format!("{} has {} channels", obj, channels),
-            Self::OscResponder(path) => format!("OSC responder exists for {}", path),
+            Self::RespondsTo(obj, method) => format!("{obj} responds to {method}"),
+            Self::ChannelCount(obj, channels) => format!("{obj} has {channels} channels"),
+            Self::OscResponder(path) => format!("OSC responder exists for {path}"),
             Self::Condition(desc, _) => desc.clone(),
             Self::Custom(desc, _) => desc.clone(),
-            Self::ContainsOutput(expected) => format!("output contains '{}'", expected),
+            Self::ContainsOutput(expected) => format!("output contains '{expected}'"),
         }
     }
 
     /// Generate SuperCollider code to evaluate the assertion
     pub fn generate_sc_code(&self) -> String {
         match self {
-            Self::NotNil(var) => format!("{}.notNil", var),
+            Self::NotNil(var) => format!("{var}.notNil"),
             Self::Equals(var, value) => {
                 let sc_value = self.value_to_sc_literal(value);
-                format!("{} == {}", var, sc_value)
+                format!("{var} == {sc_value}")
             }
             Self::Approximately(var, expected, tolerance) => {
-                format!("({} - {}).abs <= {}", var, expected, tolerance)
+                format!("({var} - {expected}).abs <= {tolerance}")
             }
             Self::RespondsTo(obj, method) => {
-                format!("{}.respondsTo(\\{})", obj, method)
+                format!("{obj}.respondsTo(\\{method})")
             }
             Self::ChannelCount(obj, channels) => {
-                format!("{}.numChannels == {}", obj, channels)
+                format!("{obj}.numChannels == {channels}")
             }
             Self::OscResponder(path) => {
                 format!("OSCdef.all[\\{}].notNil", self.path_to_symbol(path))
@@ -135,6 +135,7 @@ impl Assertion {
     }
 
     /// Convert JSON value to SuperCollider literal
+    #[allow(clippy::only_used_in_recursion)]
     fn value_to_sc_literal(&self, value: &Value) -> String {
         match value {
             Value::Null => "nil".to_string(),
@@ -159,11 +160,11 @@ impl Assertion {
 
     /// Convert OSC path to SuperCollider symbol
     fn path_to_symbol(&self, path: &str) -> String {
-        path.replace('/', "_").replace('.', "_")
+        path.replace(['/', '.'], "_")
     }
 }
 
-/// Helper functions for common assertions
+// Helper functions for common assertions
 
 /// Assert that an object exists
 pub fn object_exists(name: &str) -> Assertion {
@@ -178,32 +179,32 @@ pub fn responds_to_osc(path: &str) -> Assertion {
 /// Assert specific output channel count
 pub fn output_channels(count: u32) -> Assertion {
     Assertion::custom(
-        format!("Output has {} channels", count),
-        format!("Server.default.options.numOutputBusChannels >= {}", count),
+        format!("Output has {count} channels"),
+        format!("Server.default.options.numOutputBusChannels >= {count}"),
     )
 }
 
 /// Assert that a value is within a range
 pub fn in_range(variable: &str, min: f64, max: f64) -> Assertion {
     Assertion::condition(
-        format!("{} is between {} and {}", variable, min, max),
-        format!("({} >= {}) && ({} <= {})", variable, min, variable, max),
+        format!("{variable} is between {min} and {max}"),
+        format!("({variable} >= {min}) && ({variable} <= {max})"),
     )
 }
 
 /// Assert that an audio signal is not silent
 pub fn not_silent(variable: &str) -> Assertion {
     Assertion::condition(
-        format!("{} is not silent", variable),
-        format!("{}.squared.sum > 0.001", variable),
+        format!("{variable} is not silent"),
+        format!("{variable}.squared.sum > 0.001"),
     )
 }
 
 /// Assert that two audio signals are similar
 pub fn signals_similar(sig1: &str, sig2: &str, tolerance: f64) -> Assertion {
     Assertion::condition(
-        format!("{} and {} are similar", sig1, sig2),
-        format!("({} - {}).squared.sum.sqrt < {}", sig1, sig2, tolerance),
+        format!("{sig1} and {sig2} are similar"),
+        format!("({sig1} - {sig2}).squared.sum.sqrt < {tolerance}"),
     )
 }
 
@@ -252,7 +253,7 @@ mod tests {
         assert_eq!(assertion.value_to_sc_literal(&json!(null)), "nil");
         assert_eq!(assertion.value_to_sc_literal(&json!(true)), "true");
         assert_eq!(assertion.value_to_sc_literal(&json!(42)), "42");
-        assert_eq!(assertion.value_to_sc_literal(&json!(3.14)), "3.14");
+        assert_eq!(assertion.value_to_sc_literal(&json!(3.15)), "3.15");
         assert_eq!(assertion.value_to_sc_literal(&json!("hello")), "\"hello\"");
         assert_eq!(
             assertion.value_to_sc_literal(&json!([1, 2, 3])),

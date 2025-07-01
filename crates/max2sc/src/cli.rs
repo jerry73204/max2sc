@@ -1,7 +1,7 @@
 //! CLI argument parsing and configuration
 
 use clap::{Arg, ArgAction, Command, ValueHint};
-use eyre::{eyre, Result};
+use eyre::Result;
 use std::path::PathBuf;
 
 /// CLI arguments for max2sc converter
@@ -191,7 +191,7 @@ impl CliArgs {
     }
 
     /// Get help text for the CLI
-    pub fn help() -> String {
+    pub fn _help() -> String {
         Command::new("max2sc")
             .version(env!("CARGO_PKG_VERSION"))
             .author("Max to SuperCollider Converter")

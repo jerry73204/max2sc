@@ -1,6 +1,6 @@
 //! Configuration generation and management
 
-use eyre::{eyre, Result};
+use eyre::Result;
 use std::fs;
 use std::path::Path;
 use tracing::{info, warn};
@@ -206,14 +206,14 @@ s.waitForBoot({
     }
 
     /// Load configuration from file if it exists
-    pub fn load_config<P: AsRef<Path>>(config_path: P) -> Result<Option<ProjectConfig>> {
+    pub fn _load_config<P: AsRef<Path>>(config_path: P) -> Result<Option<ProjectConfig>> {
         let config_path = config_path.as_ref();
 
         if !config_path.exists() {
             return Ok(None);
         }
 
-        let content = fs::read_to_string(config_path)?;
+        let _content = fs::read_to_string(config_path)?;
 
         // Basic YAML-like parsing (simplified for now)
         // In a real implementation, you'd use serde_yaml
@@ -225,6 +225,7 @@ s.waitForBoot({
 
 /// Project configuration structure
 #[derive(Debug, Clone)]
+#[allow(dead_code)]
 pub struct ProjectConfig {
     pub project_name: String,
     pub author: String,
