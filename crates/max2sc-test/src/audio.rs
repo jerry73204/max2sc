@@ -44,7 +44,7 @@ pub struct AudioSettings {
 }
 
 /// Audio tolerance parameters
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct AudioTolerance {
     /// Maximum RMS difference (0.0 - 1.0)
     pub rms_tolerance: f64,
@@ -500,6 +500,191 @@ impl Default for AudioAnalysis {
                 spatial_accuracy: None,
             },
         }
+    }
+}
+
+/// Audio file comparison utility
+pub struct AudioComparison {
+    /// Path to first audio file
+    file1: PathBuf,
+    /// Path to second audio file
+    file2: PathBuf,
+}
+
+/// Result of audio comparison
+#[derive(Debug, Clone)]
+pub struct AudioComparisonResult {
+    /// Overall similarity score (0.0 - 1.0)
+    pub similarity: f32,
+    /// RMS difference
+    pub rms_difference: f64,
+    /// Spectral similarity
+    pub spectral_similarity: f64,
+    /// Peak difference
+    pub peak_difference: f64,
+    /// Whether comparison passed
+    pub passed: bool,
+}
+
+impl AudioComparison {
+    /// Create new audio comparison
+    pub fn new(file1: &Path, file2: &Path) -> Result<Self> {
+        if !file1.exists() {
+            return Err(TestError::AudioFile(format!("File not found: {}", file1.display())));
+        }
+        if !file2.exists() {
+            return Err(TestError::AudioFile(format!("File not found: {}", file2.display())));
+        }
+
+        Ok(Self {
+            file1: file1.to_path_buf(),
+            file2: file2.to_path_buf(),
+        })
+    }
+
+    /// Compare two audio files
+    pub fn compare(&self, tolerance: AudioTolerance) -> Result<AudioComparisonResult> {
+        let audio1 = self.load_audio_file(&self.file1)?;
+        let audio2 = self.load_audio_file(&self.file2)?;
+
+        if audio1.len() != audio2.len() {
+            return Err(TestError::AudioAnalysis(
+                "Audio files have different number of channels".to_string(),
+            ));
+        }
+
+        // Calculate RMS difference
+        let rms_diff = self.calculate_rms_difference(&audio1[0], &audio2[0]);
+        
+        // Calculate spectral similarity
+        let spectral_sim = self.calculate_spectral_similarity(&audio1[0], &audio2[0])?;
+        
+        // Calculate peak difference
+        let peak_diff = self.calculate_peak_difference(&audio1[0], &audio2[0]);
+
+        // Overall similarity score
+        let similarity = ((1.0 - rms_diff as f32) + spectral_sim as f32 + (1.0 - peak_diff as f32)) / 3.0;
+
+        let passed = rms_diff <= tolerance.rms_tolerance
+            && spectral_sim >= tolerance.spectral_similarity
+            && peak_diff <= tolerance.peak_tolerance;
+
+        Ok(AudioComparisonResult {
+            similarity,
+            rms_difference: rms_diff,
+            spectral_similarity: spectral_sim,
+            peak_difference: peak_diff,
+            passed,
+        })
+    }
+
+    /// Load audio file into memory
+    fn load_audio_file(&self, path: &Path) -> Result<Vec<Vec<f32>>> {
+        let mut reader = WavReader::open(path)
+            .map_err(|e| TestError::AudioFile(format!("Failed to open {}: {}", path.display(), e)))?;
+
+        let spec = reader.spec();
+        let mut samples: Vec<Vec<f32>> = vec![Vec::new(); spec.channels as usize];
+
+        match spec.sample_format {
+            SampleFormat::Int => {
+                let max_val = (1_i32 << (spec.bits_per_sample - 1)) as f32;
+                for (i, sample) in reader.samples::<i32>().enumerate() {
+                    let sample = sample
+                        .map_err(|e| TestError::AudioFile(format!("Sample read error: {e}")))?;
+                    let normalized = sample as f32 / max_val;
+                    samples[i % (spec.channels as usize)].push(normalized);
+                }
+            }
+            SampleFormat::Float => {
+                for (i, sample) in reader.samples::<f32>().enumerate() {
+                    let sample = sample
+                        .map_err(|e| TestError::AudioFile(format!("Sample read error: {e}")))?;
+                    samples[i % (spec.channels as usize)].push(sample);
+                }
+            }
+        }
+
+        Ok(samples)
+    }
+
+    /// Calculate RMS difference between two signals
+    fn calculate_rms_difference(&self, signal1: &[f32], signal2: &[f32]) -> f64 {
+        let min_len = signal1.len().min(signal2.len());
+        if min_len == 0 {
+            return 1.0;
+        }
+
+        let mut sum_sq = 0.0;
+        for i in 0..min_len {
+            let diff = signal1[i] - signal2[i];
+            sum_sq += (diff * diff) as f64;
+        }
+
+        (sum_sq / min_len as f64).sqrt()
+    }
+
+    /// Calculate spectral similarity
+    fn calculate_spectral_similarity(&self, signal1: &[f32], signal2: &[f32]) -> Result<f64> {
+        // Simplified spectral similarity - could be improved with proper FFT
+        let min_len = signal1.len().min(signal2.len());
+        if min_len < 256 {
+            return Ok(0.5); // Default similarity for short signals
+        }
+
+        // Use sliding window correlation as a proxy for spectral similarity
+        let window_size = 256;
+        let mut correlations = Vec::new();
+
+        for start in (0..min_len - window_size).step_by(window_size / 2) {
+            let end = start + window_size;
+            let corr = self.calculate_correlation(&signal1[start..end], &signal2[start..end]);
+            correlations.push(corr);
+        }
+
+        if correlations.is_empty() {
+            Ok(0.5)
+        } else {
+            Ok(correlations.iter().sum::<f64>() / correlations.len() as f64)
+        }
+    }
+
+    /// Calculate correlation between two signals
+    fn calculate_correlation(&self, signal1: &[f32], signal2: &[f32]) -> f64 {
+        let n = signal1.len().min(signal2.len());
+        if n == 0 {
+            return 0.0;
+        }
+
+        let mean1: f64 = signal1.iter().take(n).map(|&x| x as f64).sum::<f64>() / n as f64;
+        let mean2: f64 = signal2.iter().take(n).map(|&x| x as f64).sum::<f64>() / n as f64;
+
+        let mut numerator = 0.0;
+        let mut var1 = 0.0;
+        let mut var2 = 0.0;
+
+        for i in 0..n {
+            let diff1 = signal1[i] as f64 - mean1;
+            let diff2 = signal2[i] as f64 - mean2;
+
+            numerator += diff1 * diff2;
+            var1 += diff1 * diff1;
+            var2 += diff2 * diff2;
+        }
+
+        if var1 == 0.0 || var2 == 0.0 {
+            if var1 == var2 { 1.0 } else { 0.0 }
+        } else {
+            numerator / (var1 * var2).sqrt()
+        }
+    }
+
+    /// Calculate peak difference
+    fn calculate_peak_difference(&self, signal1: &[f32], signal2: &[f32]) -> f64 {
+        let peak1 = signal1.iter().map(|&x| x.abs()).fold(0.0f32, f32::max);
+        let peak2 = signal2.iter().map(|&x| x.abs()).fold(0.0f32, f32::max);
+
+        ((peak1 - peak2).abs() / peak1.max(peak2).max(1e-10)) as f64
     }
 }
 

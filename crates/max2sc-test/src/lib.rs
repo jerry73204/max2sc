@@ -9,6 +9,7 @@
 
 pub mod assertions;
 pub mod audio;
+pub mod comparison;
 pub mod error;
 pub mod fixtures;
 pub mod functional;
@@ -19,7 +20,8 @@ pub mod spatial_tests;
 pub mod syntax;
 
 pub use assertions::{Assertion, AssertionResult};
-pub use audio::{AudioAnalysis, AudioReference, AudioTest};
+pub use audio::{AudioAnalysis, AudioComparison, AudioComparisonResult, AudioReference, AudioTest};
+pub use comparison::{ComparisonConfig, ComparisonResult, Max2SCComparison, MaxRunner};
 pub use error::{Result, TestError};
 pub use fixtures::{TestData, TestFixture};
 pub use functional::{FunctionalOutput, FunctionalTest};
