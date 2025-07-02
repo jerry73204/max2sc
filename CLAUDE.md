@@ -170,3 +170,13 @@ Documentation is located in the `doc/` directory:
 - `doc/PROGRESS.md`: Task tracking and implementation status
 - `doc/CONVERSION_STRATEGIES.md`: Implementation approaches
 - `doc/NOTES_Max8_Project_Analysis.md`: Analysis of the source Max8 project
+
+## Rust Code Style
+
+- **Format Strings**: 
+  - Use inlined style on Rust format strings. The format!("{e}") is preferred over format!("{}", e).
+
+## Development Workflow
+
+- **Notification Strategies**:
+  - When tasks are completed, notify GNU Screen with a bell: `printf '\a'; echo "[Task Complete] <task description>".
